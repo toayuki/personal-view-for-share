@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title_name %}PERSONAL - shiro{% endblock %}
+
+{% block extra_css %}
+<link rel='stylesheet'
+  href='https://fonts.googleapis.com/css?family=Open+Sans%3A400%2C400italic%2C600%2C700%2C700italic%7COswald%3A400%2C300%7CVollkorn%3A400%2C400italic'>
+<link rel="stylesheet" href="/static/css/jquery.fancybox.css">
+<link href="https://use.fontawesome.com/releases/v6.6.0/css/all.css" rel="stylesheet">
+{% endblock %}
+
+{% block script %}
+<script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+<script src="/static/js/script.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.css" />
+<script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.js"></script>
+<!-- <script src="/static/js/jquery.fancybox.js"></script>
+<script>
+  $('[data-fancybox]').fancybox();
+</script> -->
+<script type="module" src="/static/js/script.js"></script>
+<script src="/static/js/getList.js"></script>
+{% endblock %}
+
+{% block content %}
+<h3>shiro</h3>
+<label for="fileUpload" class="file-link">upload</label>
+<input type="file" id="fileUpload" name="file" style="display:none;">
+<div class="wrapper">
+  <ul class="grid js-anim" id="result"></ul>
+</div>
+{% endblock %}

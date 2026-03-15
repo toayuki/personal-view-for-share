@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title_name %}{% endblock %}</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="Description" content="ここにはページの説明文を入れてください" />
+
+    {% block base_css %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
+    <link rel="stylesheet" href="static/css/style.css?v=20260221">
+    {% endblock %}
+
+    {% block extra_css %}{% endblock %}
+
+    <link href="https://use.fontawesome.com/releases/v6.6.0/css/all.css" rel="stylesheet">
+</head>
+
+<body class="{{ body_class | default('') }}" id="{{ body_id | default('') }}">
+
+    <div id="loading">
+        <div class="loader">
+            <div class="inner one"></div>
+            <div class="inner two"></div>
+            <div class="inner three"></div>
+        </div>
+    </div>
+
+    <header>
+        <h1>PERSONAL WEB</h1>
+        <!-- <h2>個人用サイト</h2> -->
+        <div class="bg_bl"></div>
+
+        <a class="menu_btn">
+            <span class="top"></span>
+            <span class="middle"></span>
+            <span class="bottom"></span>
+        </a>
+
+        <nav id="g_navi">
+            <ul>
+                <li class="sml"><a href="/">MegaPx Top</a></li>
+                <li class="sml"><a href="/">HOME</a></li>
+                <li><a href="texture.html"><img src="/static/texture/te_003.jpg" />Texture</a></li>
+                <li><a href="shiro.html"><img src="/static/shiro/dr_001.jpg" />shiro</a></li>
+                <li><a href="utopia.html"><img src="/static/utopia/ut_002.jpg" />Utopia</a></li>
+                <li><a href="drawing.html"><img src="/static/drawing/dr_003.jpg" />Drawing</a></li>
+                <li><a href="fantasy.html"><img src="/static/fantasy/fa_002.jpg" />Fantasy</a></li>
+                <li class="sml"><a href="read.html">Read Me</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="{{ main_class | default('') }}">
+    {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <ul class="f_link">
+            <li><a href="https://ameblo.jp/ponkinta/" target="_blank"><i class="fas fa-book"></i></a></li>
+            <li><a href="https://www.instagram.com/ai_mmng/" target="_blank"><i class="fab fa-instagram"></i></a></li>
+            <li><a href="https://www.megapx.com/contact.html" target="_blank"><i class="fa-regular fa-envelope"></i></a>
+            </li>
+        </ul>
+
+        <address>
+            Copyright (C) Yuki. All Rights Reserved.
+        </address>
+    </footer>
+
+    {% block script %}{% endblock %}
+
+</body>
+
+</html>
