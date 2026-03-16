@@ -61,8 +61,9 @@ def upload(data: dict = Body(...)):
     cur.execute(
         """
     INSERT INTO contents (
-    thumbnail_file_name, duration_ms, title,file_name,original_file_name,contents_type,file_type)
-    VALUES (?, ?, ?, ?, ? ,? ,?)
+    thumbnail_file_name, duration_ms, title, file_name, original_file_name,
+    stored_file_name, contents_type, file_type)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     """,
         (
             data["thumbnail_file_name"],
@@ -70,13 +71,27 @@ def upload(data: dict = Body(...)):
             data["title"],
             data["file_name"],
             data["original_file_name"],
-            # data["stored_file_name"],
+            data["stored_file_name"],
             data["contents_type"],
             data["file_type"],
         ),
     )
     conn.commit()
     conn.close()
+
+
+@app.post("/update/{target_id}")
+def update(target_id: str, data: dict = Body(...)):
+    """タイトル更新"""
+    conn = sqlite3.connect("main.db")
+    cur = conn.cursor()
+    cur.execute(
+        "UPDATE contents SET title=?, update_at=CURRENT_TIMESTAMP WHERE id=? AND deleted_at IS NULL",
+        (data["title"], target_id),
+    )
+    conn.commit()
+    conn.close()
+    return {"ok": True}
 
 
 @app.post("/delete/{target_id}")

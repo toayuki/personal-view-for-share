@@ -498,6 +498,7 @@ body.sub_page main p a {
 	opacity: 0;
 	width: 20%;
 	height: 200px;
+	position: relative;
 	transition: opacity 0.5s ease-in-out;
 	-webkit-box-sizing: border-box;
 	-moz-box-sizing: border-box;
@@ -505,6 +506,147 @@ body.sub_page main p a {
 	padding-left: 2%;
 	padding-right: 2%;
 	padding-bottom: 30px;
+}
+
+.options-area {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	display: flex;
+	justify-content: flex-end;
+	padding: 4px 4px 0 0;
+	z-index: 10;
+	pointer-events: none;
+}
+
+.options-area .delete-link {
+	display: none;
+	pointer-events: auto;
+	font-size: 10px;
+	letter-spacing: 0.15em;
+	text-transform: uppercase;
+	color: #ccc;
+	text-decoration: none;
+	background: rgba(0, 0, 0, 0.6);
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	padding: 3px 8px;
+	transition: all 0.2s linear;
+}
+
+.options-area .delete-link:hover {
+	color: #fff;
+	border-color: rgba(255, 255, 255, 0.6);
+	background: rgba(0, 0, 0, 0.85);
+}
+
+.edit-mode .options-area .delete-link,
+.edit-mode .options-area .edit-link,
+.edit-mode .options-area .force-delete-link {
+	display: block;
+}
+
+.options-area .force-delete-link {
+	display: none;
+	pointer-events: auto;
+	font-size: 10px;
+	letter-spacing: 0.15em;
+	text-transform: uppercase;
+	color: #e07070;
+	text-decoration: none;
+	background: rgba(0, 0, 0, 0.6);
+	border: 1px solid rgba(200, 80, 80, 0.3);
+	padding: 3px 8px;
+	transition: all 0.2s linear;
+}
+
+.options-area .force-delete-link:hover {
+	color: #ff9999;
+	border-color: rgba(200, 80, 80, 0.7);
+	background: rgba(0, 0, 0, 0.85);
+}
+
+.grid-item.selected > a[data-fancybox] {
+	outline: 2px solid rgba(103, 171, 205, 0.8);
+	outline-offset: -2px;
+}
+
+.grid-item.selected > a[data-fancybox]::after {
+	content: "✓";
+	position: absolute;
+	bottom: 32px;
+	right: 6px;
+	width: 20px;
+	height: 20px;
+	background: rgba(103, 171, 205, 0.85);
+	color: #fff;
+	font-size: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	pointer-events: none;
+}
+
+.options-area .edit-link {
+	display: none;
+	pointer-events: auto;
+	font-size: 10px;
+	letter-spacing: 0.15em;
+	text-transform: uppercase;
+	color: #67ABCD;
+	text-decoration: none;
+	background: rgba(0, 0, 0, 0.6);
+	border: 1px solid rgba(103, 171, 205, 0.3);
+	padding: 3px 8px;
+	transition: all 0.2s linear;
+}
+
+.options-area .edit-link:hover {
+	color: #a8d4e8;
+	border-color: rgba(103, 171, 205, 0.7);
+	background: rgba(0, 0, 0, 0.85);
+}
+
+/* 編集モーダル input */
+.edit-fields {
+	text-align: left;
+	margin-bottom: 28px;
+}
+
+.edit-label {
+	display: block;
+	font-size: 10px;
+	letter-spacing: 0.2em;
+	text-transform: uppercase;
+	color: #666;
+	margin-bottom: 8px;
+}
+
+.edit-input {
+	width: 100%;
+	background: rgba(255, 255, 255, 0.04);
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	color: #ddd;
+	font-size: 13px;
+	padding: 10px 12px;
+	box-sizing: border-box;
+	outline: none;
+	transition: border-color 0.2s linear;
+}
+
+.edit-input:focus {
+	border-color: rgba(103, 171, 205, 0.6);
+}
+
+.btn.save {
+	color: #67ABCD;
+	border: 1px solid rgba(103, 171, 205, 0.4);
+}
+
+.btn.save:hover {
+	background: rgba(103, 171, 205, 0.08);
+	color: #a8d4e8;
+	border-color: rgba(103, 171, 205, 0.7);
 }
 
 .grid-item a {
@@ -645,6 +787,14 @@ footer .box_pr li {
 	}
 }
 
+body main label.file-link--danger {
+	color: #e07070;
+}
+
+body main label.file-link--danger:hover {
+	color: #ff9999;
+}
+
 body main label.file-link {
 	display: block;
 	color: #EEE;
@@ -779,119 +929,105 @@ body main label.file-link {
 } */
 
 /* 確認モーダル */
-/* 背景 */
-body {
-  margin: 0;
-  height: 100vh;
-  background: radial-gradient(circle at top left, #1e293b, #0f172a);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-}
-
-/* オーバーレイ */
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
   display: none;
   justify-content: center;
   align-items: center;
+  z-index: 9998;
 }
 
 .modal-open {
-	display: flex
+  display: flex;
 }
 
-/* モーダル本体 */
 .modal {
-  width: 420px;
+  width: 380px;
   padding: 40px;
-  border-radius: 20px;
-  background: linear-gradient(145deg, #0f172a, #111827);
-  box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.7),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  background: linear-gradient(160deg, #0a0f1a, #0d1520);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8);
   text-align: center;
-  color: #e5e7eb;
-  animation: fadeIn 0.25s ease-out;
+  color: #ddd;
+  animation: fadeIn 0.2s ease-out;
 }
 
-/* アイコン */
-.test {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto 20px;
+.modal-icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 24px;
   border-radius: 50%;
-  background: linear-gradient(145deg, #ef4444, #b91c1c);
+  border: 1px solid rgba(103, 171, 205, 0.4);
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 32px;
+  font-size: 26px;
   font-weight: bold;
-  color: white;
-  box-shadow: 0 10px 30px rgba(239, 68, 68, 0.4);
+  color: #67ABCD;
 }
 
-/* タイトル */
 .modal h2 {
-  margin: 0 0 15px;
-  font-size: 24px;
-  font-weight: 600;
-}
-
-/* 説明文 */
-.modal p {
-  margin: 0 0 30px;
-  color: #9ca3af;
+  margin: 0 0 12px;
   font-size: 14px;
-  line-height: 1.6;
+  font-weight: normal;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: #eee;
 }
 
-/* ボタンエリア */
+.modal p {
+  margin: 0 0 28px;
+  color: #888;
+  font-size: 13px;
+  line-height: 2;
+  letter-spacing: 0.05em;
+}
+
 .actions {
   display: flex;
-  gap: 16px;
+  gap: 12px;
 }
 
-/* 共通ボタン */
 .btn {
   flex: 1;
-  padding: 12px 0;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 500;
-  border: none;
+  padding: 10px 0;
+  font-size: 11px;
+  font-weight: normal;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  background: transparent;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s linear;
 }
 
-/* キャンセル */
-.cancel {
-  background: #1f2937;
-  color: #d1d5db;
+.btn.delete {
+  color: #ccc;
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-.cancel:hover {
-  background: #374151;
+.btn.delete:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.7);
 }
 
-/* 削除 */
-.delete {
-  background: linear-gradient(145deg, #ef4444, #dc2626);
-  color: white;
-  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+.btn.cancel {
+  color: #666;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.delete:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 25px rgba(239, 68, 68, 0.6);
+.btn.cancel:hover {
+  color: #999;
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
-/* アニメーション */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.97);
   }
   to {
     opacity: 1;

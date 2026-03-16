@@ -87,3 +87,20 @@ def convert_mov_to_mp4(input_path:Path, output_path:Path):
         str(output_path),
     ]
     subprocess.run(cmd, check=True)
+
+
+def convert_to_hls(input_path: Path, output_dir: Path) -> None:
+    """動画ファイルをHLS形式（m3u8 + tsセグメント）に変換する"""
+    output_dir.mkdir(parents=True, exist_ok=True)
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-i", str(input_path),
+        "-c:v", "copy",
+        "-c:a", "copy",
+        "-hls_time", "10",
+        "-hls_list_size", "0",
+        "-hls_segment_filename", str(output_dir / "seg%03d.ts"),
+        str(output_dir / "index.m3u8"),
+    ]
+    subprocess.run(cmd, check=True)

@@ -11,13 +11,13 @@ import shutil
 from pathlib import Path
 import requests
 from dotenv import load_dotenv  # type: ignore
-from fastapi import FastAPI, File, Request, UploadFile
+from fastapi import BackgroundTasks, FastAPI, File, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from src import create_thumbnail
-from src.services import convert_mov_to_mp4, convert_to_jpg, create_random_file_name, get_file_type
+from src.services import convert_to_hls, convert_to_jpg, create_random_file_name, get_file_type
 
 load_dotenv()
 BASE_DIR = Path(os.getenv("CONTENTS_SAVE_DIR", ""))
@@ -43,6 +43,12 @@ async def confirm_modal(request: Request):
         "title_name": "PERSONAL - shiro",
     }
     return html.TemplateResponse("confirmModal.html", context)
+
+
+@app.get("/editModal.html", response_class=HTMLResponse)
+async def edit_modal(request: Request):
+    """editモーダルを返す"""
+    return html.TemplateResponse("editModal.html", {"request": request})
 
 
 @app.get("/shiro.html", response_class=HTMLResponse)
@@ -113,12 +119,16 @@ def get_img_file(contents_type: str, file_name: str):
     return FileResponse(file_path)
 
 
-@app.get("/personal-web/contents/{contents_type}/video/{file_name}")
-def get_video_file(contents_type: str, file_name: str):
-    """videoファイルを返す"""
-    print("xxxxxここ2")
-    file_path = BASE_DIR / contents_type / "videos" / file_name
-    return FileResponse(file_path)
+@app.get("/personal-web/contents/{contents_type}/video/{file_path:path}")
+def get_video_file(contents_type: str, file_path: str):
+    """videoファイルを返す（HLS対応）"""
+    full_path = BASE_DIR / contents_type / "videos" / file_path
+    ext = Path(file_path).suffix.lower()
+    if ext == ".m3u8":
+        return FileResponse(full_path, media_type="application/vnd.apple.mpegurl")
+    if ext == ".ts":
+        return FileResponse(full_path, media_type="video/mp2t")
+    return FileResponse(full_path)
 
 
 @app.get("/personal-web/contents/{contents_type}/thumbnail/{file_name}")
@@ -129,7 +139,7 @@ def get_thumbnail_file(contents_type: str, file_name: str):
 
 
 @app.post("/upload/{contents_type}")
-async def upload_file(contents_type: str, file: UploadFile = File(...)):
+async def upload_file(contents_type: str, background_tasks: BackgroundTasks, file: UploadFile = File(...)):
     """ファイルのアップロードを行う"""
     target_dir_path = BASE_DIR / contents_type
     original_ext = Path(file.filename).suffix.lower()
@@ -142,6 +152,8 @@ async def upload_file(contents_type: str, file: UploadFile = File(...)):
     view_file_name_without_ext = create_random_file_name(20)
     view_file_name = view_file_name_without_ext + original_ext.lower()
     original_file_type = get_file_type(stored_file_path)
+    thumbnail_file_name = create_random_file_name(20) + ".jpg"
+
     if original_file_type == "image":
         if original_ext in [".bmp", ".tiff", ".dng", ".heic"]:
             img = convert_to_jpg(file_bytes, original_ext)
@@ -152,28 +164,33 @@ async def upload_file(contents_type: str, file: UploadFile = File(...)):
             view_file_path = target_dir_path / "images" / view_file_name
             with view_file_path.open("wb") as buffer:
                 buffer.write(file_bytes)
+        create_thumbnail.create_thumbnail(
+            stored_file_path,
+            target_dir_path / "thumbnails" / thumbnail_file_name,
+        )
     elif original_file_type == "video":
-        if original_ext == ".mov":
-            view_file_name = f"{view_file_name_without_ext}.mp4"
-            converted_view_file_path = target_dir_path / "videos" / view_file_name
-            convert_mov_to_mp4(stored_file_path,converted_view_file_path)
-        else:
-            view_file_path = target_dir_path / "videos" / view_file_name
-            with view_file_path.open("wb") as buffer:
-                buffer.write(file_bytes)
+        hls_dir_name = view_file_name_without_ext
+        hls_output_dir = target_dir_path / "videos" / hls_dir_name
+        view_file_name = f"{hls_dir_name}/index.m3u8"
+        # HLS変換とサムネイル生成はバックグラウンドで実行
+        background_tasks.add_task(convert_to_hls, stored_file_path, hls_output_dir)
+        background_tasks.add_task(
+            create_thumbnail.create_thumbnail,
+            stored_file_path,
+            target_dir_path / "thumbnails" / thumbnail_file_name,
+        )
     elif original_file_type == "other":
         view_file_path = target_dir_path / "others" / view_file_name
         with view_file_path.open("wb") as buffer:
             buffer.write(file_bytes)
+        create_thumbnail.create_thumbnail(
+            stored_file_path,
+            target_dir_path / "thumbnails" / thumbnail_file_name,
+        )
 
-    thumbnail_file_name = create_random_file_name(20) + ".jpg"
-    create_thumbnail.create_thumbnail(
-        stored_file_path,
-        target_dir_path / "thumbnails" / thumbnail_file_name,
-    )
     stat = stored_file_path.stat()
     name_without_ext = Path(file.filename).stem
-    res = requests.post(
+    requests.post(
         f"{API_URL}/upload",
         json={
             "file_name": view_file_name,
@@ -196,32 +213,69 @@ async def upload_file(contents_type: str, file: UploadFile = File(...)):
 def delete(target_id: str):
     """表示用データだけ削除を実施する"""
     print("削除受信", target_id)
-    response = requests.get(f"{API_URL}/getItem/{target_id}",timeout=10).json()
-    requests.post(f"{API_URL}/delete/{target_id}",timeout=10)
-    print("item",response)
-    # conn = sqlite3.connect("main.db")
-    # conn.row_factory = sqlite3.Row
-    # cur = conn.cursor()
-    # cur.execute(
-    #     """
-    # delete from contents where id = ?
-    # """,(target_id,))
-    # conn.commit()
-    # conn.close()
+    response = requests.get(f"{API_URL}/getItem/{target_id}", timeout=10).json()
+    item = response.get("item")
+    if item:
+        contents_type = item["contents_type"]
+        file_type = item["file_type"]
+
+        # 表示用ファイル削除
+        if file_type == "video":
+            view_path = BASE_DIR / contents_type / "videos" / item["file_name"]
+            hls_dir = view_path.parent
+            videos_root = BASE_DIR / contents_type / "videos"
+            if hls_dir != videos_root and hls_dir.exists():
+                shutil.rmtree(hls_dir)
+            elif view_path.exists():
+                view_path.unlink()
+        else:
+            view_path = BASE_DIR / contents_type / "images" / item["file_name"]
+            if view_path.exists():
+                view_path.unlink()
+
+        # サムネイル削除
+        if item.get("thumbnail_file_name"):
+            thumb_path = BASE_DIR / contents_type / "thumbnails" / item["thumbnail_file_name"]
+            if thumb_path.exists():
+                thumb_path.unlink()
+
+    requests.post(f"{API_URL}/delete/{target_id}", timeout=10)
+    return {"ok": True}
 
 @app.get("/forceDelete/{target_id}")
 def force_delete(target_id: str):
-    """オリジナルデータも含めて削除を実施する"""
-    print("削除受信", target_id)
-    response = requests.get(f"{API_URL}/getItem/{target_id}",timeout=10).json()
-    requests.post(f"{API_URL}/delete/{target_id}",timeout=10)
-    print("item",response)
-    # conn = sqlite3.connect("main.db")
-    # conn.row_factory = sqlite3.Row
-    # cur = conn.cursor()
-    # cur.execute(
-    #     """
-    # delete from contents where id = ?
-    # """,(target_id,))
-    # conn.commit()
-    # conn.close()
+    """関連ファイルを含めて全削除する"""
+    response = requests.get(f"{API_URL}/getItem/{target_id}", timeout=10).json()
+    item = response.get("item")
+    if item:
+        contents_type = item["contents_type"]
+        file_type = item["file_type"]
+
+        # 表示用ファイル削除
+        if file_type == "video":
+            view_path = BASE_DIR / contents_type / "videos" / item["file_name"]
+            hls_dir = view_path.parent
+            videos_root = BASE_DIR / contents_type / "videos"
+            if hls_dir != videos_root and hls_dir.exists():
+                shutil.rmtree(hls_dir)
+            elif view_path.exists():
+                view_path.unlink()
+        else:
+            view_path = BASE_DIR / contents_type / "images" / item["file_name"]
+            if view_path.exists():
+                view_path.unlink()
+
+        # サムネイル削除
+        if item.get("thumbnail_file_name"):
+            thumb_path = BASE_DIR / contents_type / "thumbnails" / item["thumbnail_file_name"]
+            if thumb_path.exists():
+                thumb_path.unlink()
+
+        # オリジナルファイル削除
+        if item.get("stored_file_name"):
+            orig_path = BASE_DIR / contents_type / "originals" / item["stored_file_name"]
+            if orig_path.exists():
+                orig_path.unlink()
+
+    requests.post(f"{API_URL}/delete/{target_id}", timeout=10)
+    return {"ok": True}

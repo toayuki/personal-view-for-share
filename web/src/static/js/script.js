@@ -1,4 +1,5 @@
 import { onOpenConfirm } from "./modal.js";
+import { onOpenEdit } from "./editModal.js";
 
 //Gメニュー
 var bnrBtn = $('#g_navi');
@@ -60,70 +61,211 @@ const spinner = document.getElementById('loading');
 
 // ファイルアップロード処理
 
-document.getElementById('fileUpload').addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+document.getElementById('fileUpload').addEventListener('change', async (e) => {
+  const files = Array.from(e.target.files ?? []);
+  if (files.length === 0) return;
 
-  const formData = new FormData();
-  formData.append('file', file);
-
-  // アップロード開始 → ローディング表示
   spinner.classList.remove('loaded');
 
-  const xhr = new XMLHttpRequest();
+  for (const file of files) {
+    await new Promise((resolve, reject) => {
+      const formData = new FormData();
+      formData.append('file', file);
 
-  xhr.upload.onprogress = (event) => {
-    if (event.lengthComputable) {
-      const percent = Math.round((event.loaded / event.total) * 100);
-      console.log(`アップロード中: ${percent}%`);
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percent = Math.round((event.loaded / event.total) * 100);
+          console.log(`アップロード中 [${file.name}]: ${percent}%`);
+        }
+      };
+
+      xhr.onload = () => {
+        console.log(`アップロード成功: ${file.name}`);
+        resolve();
+      };
+
+      xhr.onerror = () => {
+        console.error(`アップロード失敗: ${file.name}`);
+        reject();
+      };
+
+      xhr.open('POST', '/upload/shiro');
+      xhr.send(formData);
+    }).catch(() => {});
+  }
+
+  spinner.classList.add('loaded');
+  location.reload();
+});
+
+const optionsBtn = document.getElementById("optionsBtn");
+const deleteSelectedBtn = document.getElementById("deleteSelectedBtn");
+
+function getSelectedItems() {
+  return Array.from(document.querySelectorAll(".grid-item.selected"));
+}
+
+function updateDeleteSelectedBtn() {
+  const count = getSelectedItems().length;
+  if (deleteSelectedBtn) {
+    deleteSelectedBtn.style.display = count > 0 ? "" : "none";
+    deleteSelectedBtn.textContent = `delete (${count})`;
+  }
+}
+
+if (optionsBtn) {
+  optionsBtn.addEventListener("click", () => {
+    const isEditMode = document.body.classList.toggle("edit-mode");
+    optionsBtn.textContent = isEditMode ? "done" : "options";
+    if (!isEditMode) {
+      document.querySelectorAll(".grid-item.selected").forEach(el => el.classList.remove("selected"));
+      updateDeleteSelectedBtn();
+    }
+  });
+}
+
+if (deleteSelectedBtn) {
+  deleteSelectedBtn.addEventListener("click", async () => {
+    const selected = getSelectedItems();
+    if (selected.length === 0) return;
+    await onOpenConfirm({
+      message: `${selected.length}件を削除しますか？`,
+      onOk: async () => {
+        for (const item of selected) {
+          try {
+            const res = await fetch(`/delete/${item.dataset.id}`);
+            if (!res.ok) throw new Error(`delete failed: ${res.status}`);
+            item.remove();
+          } catch (err) {
+            console.error("削除に失敗しました", err);
+          }
+        }
+        updateDeleteSelectedBtn();
+      },
+    });
+  });
+}
+
+document.addEventListener("click", async (e) => {
+  if (document.body.classList.contains("edit-mode")) {
+    const thumbnail = e.target.closest(".grid-item a[data-fancybox]");
+    if (thumbnail) {
+      e.preventDefault();
+      thumbnail.closest(".grid-item").classList.toggle("selected");
+      updateDeleteSelectedBtn();
+      return;
     }
   }
 
-  xhr.onload = () => {
-    // ✅ 完了 → ローディング非表示
-    spinner.classList.add('loaded');
-    console.log('アップロード成功', xhr.responseText);
-    location.reload()
-  };
-
-  xhr.onerror = () => {
-    spinner.classList.add('loaded');
-    console.error('アップロード失敗');
-  };
-
-  xhr.open('POST', '/upload/shiro');
-  xhr.send(formData);
-});
-
-document.addEventListener("click", async (e) => {
-  console.log("xxx呼ばれた")
   const deleteLink = e.target.closest(".delete-link");
   if (deleteLink) {
-    e.preventDefault()
-    const targetId = deleteLink.dataset.id;
-    console.log("xxxxxここ")
-    await onOpenConfirm({message: "本当に削除しますか？",onOk: async()=>{
-      console.log("xxx削除実行")
-    }})
-        console.log("xxxxxここ2")
-    // try {
-    //   const res = await fetch(`/api/delete/${targetId}`, {
-    //     method: "DELETE",
-    //     headers: {
-    //       "Content-Type": "application/json"
-    //     }
-    //   });
+    e.preventDefault();
+    const isEditMode = document.body.classList.contains("edit-mode");
+    const selectedItems = getSelectedItems();
+    if (isEditMode && selectedItems.length > 0) {
+      const clickedItem = deleteLink.closest(".grid-item");
+      if (clickedItem && !clickedItem.classList.contains("selected")) {
+        clickedItem.classList.add("selected");
+        updateDeleteSelectedBtn();
+      }
+      const targets = getSelectedItems();
+      await onOpenConfirm({
+        message: `${targets.length}件を削除しますか？`,
+        onOk: async () => {
+          for (const item of targets) {
+            try {
+              const res = await fetch(`/delete/${item.dataset.id}`);
+              if (!res.ok) throw new Error(`delete failed: ${res.status}`);
+              item.remove();
+            } catch (err) {
+              console.error("削除に失敗しました", err);
+            }
+          }
+          updateDeleteSelectedBtn();
+        },
+      });
+    } else {
+      const targetId = deleteLink.dataset.id;
+      await onOpenConfirm({
+        message: "本当に削除しますか？",
+        onOk: async () => {
+          try {
+            const res = await fetch(`/delete/${targetId}`);
+            if (!res.ok) throw new Error(`delete failed: ${res.status}`);
+            deleteLink.closest(".grid-item")?.remove();
+          } catch (err) {
+            console.error("削除に失敗しました", err);
+          }
+        }
+      });
+    }
+  }
 
-    //   if (!res.ok) {
-    //     throw new Error(`delete failed: ${res.status}`);
-    //   }
+  const forceDeleteLink = e.target.closest(".force-delete-link");
+  if (forceDeleteLink) {
+    e.preventDefault();
+    const isEditMode = document.body.classList.contains("edit-mode");
+    const selectedItems = getSelectedItems();
+    if (isEditMode && selectedItems.length > 0) {
+      const clickedItem = forceDeleteLink.closest(".grid-item");
+      if (clickedItem && !clickedItem.classList.contains("selected")) {
+        clickedItem.classList.add("selected");
+        updateDeleteSelectedBtn();
+      }
+      const targets = getSelectedItems();
+      await onOpenConfirm({
+        message: `ファイルを含む全データ ${targets.length}件を削除します。元に戻せません。`,
+        onOk: async () => {
+          for (const item of targets) {
+            try {
+              const res = await fetch(`/forceDelete/${item.dataset.id}`);
+              if (!res.ok) throw new Error(`force delete failed: ${res.status}`);
+              item.remove();
+            } catch (err) {
+              console.error("強制削除に失敗しました", err);
+            }
+          }
+          updateDeleteSelectedBtn();
+        },
+      });
+    } else {
+      const targetId = forceDeleteLink.dataset.id;
+      await onOpenConfirm({
+        message: "ファイルを含む全データを削除します。元に戻せません。",
+        onOk: async () => {
+          try {
+            const res = await fetch(`/forceDelete/${targetId}`);
+            if (!res.ok) throw new Error(`force delete failed: ${res.status}`);
+            forceDeleteLink.closest(".grid-item")?.remove();
+          } catch (err) {
+            console.error("強制削除に失敗しました", err);
+          }
+        },
+      });
+    }
+  }
 
-    //   // 削除成功 → リロード
-    //   location.reload();
-
-    // } catch (err) {
-    //   alert("削除に失敗しました");
-    //   console.error(err);
-    // }
+  const editLink = e.target.closest(".edit-link");
+  if (editLink) {
+    e.preventDefault();
+    await onOpenEdit({
+      id: editLink.dataset.id,
+      title: editLink.dataset.title,
+      onSave: async ({ title }) => {
+        try {
+          const res = await fetch(`http://192.168.0.7:8000/update/${editLink.dataset.id}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title }),
+          });
+          if (!res.ok) throw new Error(`update failed: ${res.status}`);
+          editLink.dataset.title = title;
+        } catch (err) {
+          console.error("更新に失敗しました", err);
+        }
+      },
+    });
   }
 })
