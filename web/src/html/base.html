@@ -4,24 +4,41 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>{% block title_name %}{% endblock %}</title>
+    <title>{% block title %}PERSONAL WEB{% endblock %}</title>
 
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="Description" content="ここにはページの説明文を入れてください" />
+    <link rel="icon" type="image/x-icon" href="/static/img/favicon.ico">
+    <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon.png">
 
     {% block base_css %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
+    <link rel="stylesheet" href="/static/css/theme.css">
     <link rel="stylesheet" href="static/css/style.css?v=20260221">
     {% endblock %}
+    <script>
+      // ページ描画前にテーマを適用してフラッシュを防ぐ
+      (function() {
+        const t = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', t);
+      })();
+    </script>
 
-    {% block extra_css %}{% endblock %}
+    {% block extra_css %}
+    <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Open+Sans%3A400%2C400italic%2C600%2C700%2C700italic%7COswald%3A400%2C300%7CVollkorn%3A400%2C400italic'>
+    <link rel="stylesheet" href="/static/css/lightbox.css">
+    {% endblock %}
 
     <link href="https://use.fontawesome.com/releases/v6.6.0/css/all.css" rel="stylesheet">
+    {% block page_style %}{% endblock %}
 </head>
 
-<body class="{{ body_class | default('') }}" id="{{ body_id | default('') }}">
+<body class="{{ body_class | default('') }} {% if not (category_image and category_id) %}default-category-bg{% endif %}" id="{{ body_id | default('') }}"
+  {% if category_image and category_id %}style="background-image: linear-gradient(var(--bg-image-overlay), var(--bg-image-overlay)), url('/personal-web/categories/{{ category_id }}/img/{{ category_image }}')"{% endif %}>
 
-    <div id="loading">
+
+    <div id="loading" class="{% block loading_class %}{% endblock %}">
         <div class="loader">
             <div class="inner one"></div>
             <div class="inner two"></div>
@@ -29,6 +46,7 @@
         </div>
     </div>
 
+    {% block header %}
     <header>
         <h1>PERSONAL WEB</h1>
         <!-- <h2>個人用サイト</h2> -->
@@ -42,27 +60,37 @@
 
         <nav id="g_navi">
             <ul>
-                <li class="sml"><a href="/">MegaPx Top</a></li>
                 <li class="sml"><a href="/">HOME</a></li>
-                <li><a href="texture.html"><img src="/static/texture/te_003.jpg" />Texture</a></li>
-                <li><a href="shiro.html"><img src="/static/shiro/dr_001.jpg" />shiro</a></li>
-                <li><a href="utopia.html"><img src="/static/utopia/ut_002.jpg" />Utopia</a></li>
-                <li><a href="drawing.html"><img src="/static/drawing/dr_003.jpg" />Drawing</a></li>
-                <li><a href="fantasy.html"><img src="/static/fantasy/fa_002.jpg" />Fantasy</a></li>
-                <li class="sml"><a href="read.html">Read Me</a></li>
+                {% for category in categories | default([]) %}
+                <li class="sml"><a href="{{ category.id }}.html">{% if category.image_file_name %}<img src="/personal-web/categories/{{ category.id }}/img/{{ category.image_file_name }}" />{% endif %}{{ category.name }}</a></li>
+                {% endfor %}
+                <li class="sml"><a href="howToUse.html">How to use</a></li>
+                {% if role == "admin" %}<li class="sml"><a href="/logs">Logs</a></li>{% endif %}
+                <li class="sml"><a href="#" id="logoutBtn">Logout</a></li>
             </ul>
         </nav>
     </header>
+    {% endblock %}
 
     <main class="{{ main_class | default('') }}">
-    {% block content %}{% endblock %}
+    {% block content %}
+    <h3>{{ category_name }}</h3>
+    <label for="fileUpload" class="file-link">upload</label>
+    <label id="optionsBtn" class="file-link">options</label>
+    <label id="selectAllBtn" class="file-link">select all</label>
+    <input type="file" id="fileUpload" name="file" multiple style="display:none;">
+    <div class="wrapper">
+      <ul class="grid js-anim" id="result" data-category-id="{{ category_id | default('') }}"></ul>
+    </div>
+    {% endblock %}
     </main>
 
+    {% block footer %}
     <footer>
         <ul class="f_link">
-            <li><a href="https://ameblo.jp/ponkinta/" target="_blank"><i class="fas fa-book"></i></a></li>
-            <li><a href="https://www.instagram.com/ai_mmng/" target="_blank"><i class="fab fa-instagram"></i></a></li>
-            <li><a href="https://www.megapx.com/contact.html" target="_blank"><i class="fa-regular fa-envelope"></i></a>
+            <li><a href="#" target="_blank"><i class="fas fa-book"></i></a></li>
+            <li><a href="#" target="_blank"><i class="fab fa-instagram"></i></a></li>
+            <li><a href="#" target="_blank"><i class="fa-regular fa-envelope"></i></a>
             </li>
         </ul>
 
@@ -70,8 +98,28 @@
             Copyright (C) Yuki. All Rights Reserved.
         </address>
     </footer>
+    {% endblock %}
 
-    {% block script %}{% endblock %}
+    {% block script %}
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script type="module" src="/static/js/script.js"></script>
+    <script src="/static/js/lightbox.js"></script>
+    {% endblock %}
+    <button id="theme-toggle" title="テーマ切り替え">☀</button>
+    <script>
+      (function() {
+        const btn = document.getElementById('theme-toggle');
+        // data-theme は <head> スクリプト済みなのでボタン表示のみ同期
+        btn.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀' : '🌙';
+        btn.addEventListener('click', function() {
+          const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', t);
+          btn.textContent = t === 'dark' ? '☀' : '🌙';
+          localStorage.setItem('theme', t);
+        });
+      })();
+    </script>
 
 </body>
 

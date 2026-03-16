@@ -10,122 +10,82 @@
 <link href="https://use.fontawesome.com/releases/v6.6.0/css/all.css" rel="stylesheet">
 {% endblock %}
 
+{% macro category_slide(name='', description='', href='', category_id='', image_file_name=None, extra_class='', show_edit=False) %}
+<div class="slide{{ (' ' + extra_class) if extra_class }}">
+  <div class="slide-content">
+    <div class="caption">
+      <div class="title">{{ name }}</div>
+      <p class="text"{{ ' style="display:none;"' if not description }}>{{ description }}</p>
+      <a href="{{ href }}" class="btn"><span class="btn-inner">一覧を確認する</span></a>
+      <div class="category-action-btns">
+        <button class="category-share-btn" data-category-id="{{ category_id }}">
+          <i class="fa-solid fa-share-nodes"></i> 共有
+        </button>
+        <button class="category-edit-btn"
+          data-category-id="{{ category_id }}"
+          data-name="{{ name }}"
+          data-description="{{ description }}"
+          data-image-file-name="{{ image_file_name or '' }}"
+          {{ 'style="display:none;"' if not show_edit }}>
+          <i class="fa-solid fa-pen"></i> 編集
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="image-container{{ '' if image_file_name else ' default-category-bg' }}">
+    <img class="image" src="{{ '/personal-web/categories/' + category_id + '/img/' + image_file_name if image_file_name else '' }}"{{ ' style="display:none;"' if not image_file_name }}>
+  </div>
+</div>
+{% endmacro %}
+
+{% macro add_category_slide(extra_class='') %}
+<div class="slide slide-add-category{{ ' ' + extra_class if extra_class }}">
+  <div class="slide-content">
+    <div class="caption">
+      <div class="title">Add Category</div>
+      <p class="text">新しいカテゴリを登録して<br>コンテンツを整理しましょう</p>
+      <button id="add-category-btn" class="btn">
+        <span class="btn-inner">カテゴリを追加する</span>
+      </button>
+    </div>
+  </div>
+  <div class="image-container default-category-bg"></div>
+</div>
+{% endmacro %}
+
 {% block content %}
+  <template id="category-slide-tpl">
+    {{ category_slide(extra_class='is-loaded', show_edit=True) }}
+  </template>
+
   <section class="slideshow">
     <div class="slideshow-inner">
+      {% if categories %}
       <div class="slides">
-        <div class="slide is-active ">
-          <div class="slide-content">
-            <div class="caption">
-              <div class="title">Latte</div>
-              <div class="text">
-                <p>テクスチャーとして使える素材</p>
-              </div>
-              <a href="texture.html" class="btn">
-                <span class="btn-inner">一覧を確認する</span>
-              </a>
-            </div>
-          </div>
-          <div class="image-container">
-            <img src="/static/latte/IMG_0507.jpg" class="image" />
-          </div>
-        </div>
-        <div class="slide">
-          <div class="slide-content">
-            <div class="caption">
-              <div class="title">shiro</div>
-              <div id="result">読み込み中...</div>
-              <script>
-                fetch("http://192.168.0.7:8000/message")
-                  .then(response => {
-                    console.log("xxx受け取った")
-                    return response.json()
-                  })
-                  .then(data => {
-                    document.getElementById("result").textContent = data.message;
-                  })
-                  .catch(err => {
-                    console.log("xxxここ")
-                    document.getElementById("result").textContent = "取得失敗";
-                    console.error(err);
-                  });
-              </script>
-              <a href="shiro.html" class="btn">
-                <span class="btn-inner">一覧を確認する</span>
-              </a>
-            </div>
-          </div>
-          <div class="image-container">
-            <img src="/static/shiro/IMG_0936.DNG" class="image" />
-          </div>
-        </div>
-        <!-- <div class="slide">
-          <div class="slide-content">
-            <div class="caption">
-              <div class="title">Utopia</div>
-              <div class="text">
-                <p>幻想的な風景が広がる理想郷</p>
-              </div>
-              <a href="/utopia.html" class="btn">
-                <span class="btn-inner">一覧を確認する</span>
-              </a>
-            </div>
-          </div>
-          <div class="image-container">
-            <img src="/static/utopia/ut_002.jpg" class="image" />
-          </div>
-        </div>
-        <div class="slide">
-          <div class="slide-content">
-            <div class="caption">
-              <div class="title">Drawing</div>
-              <div class="text">
-                <p>線画、細密画、コラージュ等、アート系</p>
-              </div>
-              <a href="/drawing.html" class="btn">
-                <span class="btn-inner">一覧を確認する</span>
-              </a>
-            </div>
-          </div>
-          <div class="image-container">
-            <img src="/static/drawing/dr_003.jpg" class="image" />
-          </div>
-        </div>
-        <div class="slide">
-          <div class="slide-content">
-            <div class="caption">
-              <div class="title">Fantasy</div>
-              <div class="text">
-                <p>幻想的な架空の生物等ファンタジーな世界</p>
-              </div>
-              <a href="/fantasy.html" class="btn">
-                <span class="btn-inner">一覧を確認する</span>
-              </a>
-            </div>
-          </div>
-          <div class="image-container">
-            <img src="/static/fantasy/fa_002.jpg" class="image" />
-          </div>
-        </div>
-      </div> -->
+        {% for category in categories %}
+        {{ category_slide(
+          name=category.name,
+          description=category.description or '',
+          href=category.id ~ '.html',
+          category_id=category.id,
+          image_file_name=category.image_file_name,
+          extra_class='is-active' if loop.first else '',
+          show_edit=(role == "admin" or category.created_by|string == user_id)
+        ) }}
+        {% endfor %}
+        {{ add_category_slide() }}
+      </div>
       <div class="pagination">
-        <div class="item is-active">
-          <span class="icon">1</span>
+        {% for category in categories %}
+        <div class="item{% if loop.first %} is-active{% endif %}">
+          <span class="icon">{{ loop.index }}</span>
         </div>
+        {% endfor %}
         <div class="item">
-          <span class="icon">2</span>
-        </div>
-        <!-- <div class="item">
-          <span class="icon">3</span>
-        </div>
-        <div class="item">
-          <span class="icon">4</span>
-        </div>
-        <div class="item">
-          <span class="icon">5</span> -->
+          <span class="icon">{{ categories|length + 1 }}</span>
         </div>
       </div>
-      <!-- <div class="arrows">
+      <div class="arrows">
         <div class="arrow prev">
           <span class="svg svg-arrow-left">
             <svg version="1.1" id="svg4-Layer_1" xmlns="http://www.w3.org/2000/svg"
@@ -148,17 +108,27 @@
             <span class="alt sr-only"></span>
           </span>
         </div>
-      </div> -->
+      </div>
+      {% else %}
+      {{ add_category_slide('is-active is-loaded') }}
+      {% endif %}
     </div>
   </section>
 {% endblock %}
 
 {% block script %}
 <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<!-- particle effect: uncomment to enable -->
+<script src="/static/js/particleEffect.js"></script>
+{% if categories %}
 <script src='https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.1/TweenMax.min.js'></script>
-<script src="/static/js/script.js"></script>
-<script type="module" src="/static/js/script.js"></script>
 <script src="/static/js/slider.js"></script>
+{% endif %}
+<script type="module" src="/static/js/script.js"></script>
+<script type="module" src="/static/js/categoryCreateModal.js"></script>
+<script type="module" src="/static/js/shareModal.js"></script>
+<script type="module" src="/static/js/categoryEditModal.js"></script>
 {% endblock %}
 </body>
 

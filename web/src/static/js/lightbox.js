@@ -1,0 +1,134 @@
+(function () {
+  let items = [];
+  let currentIndex = 0;
+  let hlsInstance = null;
+
+  const overlay = document.createElement("div");
+  overlay.id = "lb-overlay";
+
+  const content = document.createElement("div");
+  content.id = "lb-content";
+
+  const closeBtn = document.createElement("button");
+  closeBtn.id = "lb-close";
+  closeBtn.setAttribute("aria-label", "閉じる");
+  closeBtn.innerHTML = "&times;";
+
+  const prevBtn = document.createElement("button");
+  prevBtn.id = "lb-prev";
+  prevBtn.setAttribute("aria-label", "前へ");
+  prevBtn.innerHTML = "&#10094;";
+
+  const nextBtn = document.createElement("button");
+  nextBtn.id = "lb-next";
+  nextBtn.setAttribute("aria-label", "次へ");
+  nextBtn.innerHTML = "&#10095;";
+
+  overlay.appendChild(closeBtn);
+  overlay.appendChild(prevBtn);
+  overlay.appendChild(content);
+  overlay.appendChild(nextBtn);
+  document.body.appendChild(overlay);
+
+  function open(index) {
+    currentIndex = index;
+    render();
+    overlay.classList.add("lb-open");
+    document.body.style.overflow = "hidden";
+  }
+
+  function close() {
+    if (hlsInstance) {
+      hlsInstance.destroy();
+      hlsInstance = null;
+    }
+    overlay.classList.remove("lb-open");
+    document.body.style.overflow = "";
+    content.innerHTML = "";
+  }
+
+  function render() {
+    if (hlsInstance) {
+      hlsInstance.destroy();
+      hlsInstance = null;
+    }
+    content.innerHTML = "";
+    const item = items[currentIndex];
+
+    if (item.type === "video" || item.type === "html5video") {
+      const video = document.createElement("video");
+      video.controls = true;
+      video.autoplay = true;
+      if (item.href.endsWith(".m3u8")) {
+        if (typeof Hls !== "undefined" && Hls.isSupported()) {
+          hlsInstance = new Hls();
+          hlsInstance.loadSource(item.href);
+          hlsInstance.attachMedia(video);
+        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+          video.src = item.href;
+        }
+      } else {
+        video.src = item.href;
+      }
+      content.appendChild(video);
+    } else {
+      const img = document.createElement("img");
+      img.src = item.href;
+      content.appendChild(img);
+    }
+
+    prevBtn.style.visibility = currentIndex === 0 ? "hidden" : "visible";
+    nextBtn.style.visibility = currentIndex === items.length - 1 ? "hidden" : "visible";
+  }
+
+  function prev() {
+    if (currentIndex > 0) open(currentIndex - 1);
+  }
+
+  function next() {
+    if (currentIndex < items.length - 1) open(currentIndex + 1);
+  }
+
+  closeBtn.addEventListener("click", close);
+
+  overlay.addEventListener("click", function (e) {
+    if (e.target === overlay) close();
+  });
+
+  prevBtn.addEventListener("click", function (e) {
+    e.stopPropagation();
+    prev();
+  });
+
+  nextBtn.addEventListener("click", function (e) {
+    e.stopPropagation();
+    next();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (!overlay.classList.contains("lb-open")) return;
+    if (e.key === "Escape") close();
+    if (e.key === "ArrowLeft") prev();
+    if (e.key === "ArrowRight") next();
+  });
+
+  document.addEventListener("click", function (e) {
+    if (document.body.classList.contains("edit-mode")) return;
+    const a = e.target.closest("a[data-fancybox]");
+    if (!a) return;
+    e.preventDefault();
+
+    const group = a.dataset.fancybox;
+    const allLinks = Array.from(document.querySelectorAll(`a[data-fancybox="${group}"]`));
+
+    items = allLinks.map(function (el) {
+      return {
+        href: el.href,
+        type: el.dataset.type || "image",
+      };
+    });
+
+    const clickedIndex = allLinks.indexOf(a);
+    open(clickedIndex);
+  });
+})();

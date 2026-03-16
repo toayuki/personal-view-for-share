@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Logs - PERSONAL WEB</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="/static/img/favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon.png">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans%3A400%2C400italic%2C600%2C700%7COswald%3A400%2C300">
+  <link href="https://use.fontawesome.com/releases/v6.6.0/css/all.css" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/theme.css">
+  <link rel="stylesheet" href="/static/css/logs.css">
+  <script>
+    (function() {
+      const t = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+</head>
+<body>
+
+<div id="top-bar">
+  <a href="/"><i class="fas fa-chevron-left" style="font-size:8px;margin-right:4px;"></i>Home</a>
+  <h1>Log Viewer</h1>
+  <span id="status-dot"></span>
+</div>
+
+<div id="body">
+  <aside id="sidebar">
+    <h2>Log files</h2>
+    <ul id="file-list">
+      <li><a href="#" id="ip-tab" data-mode="ip"><i class="fas fa-network-wired" style="margin-right:6px;opacity:0.7;"></i>IP 一覧</a></li>
+      {% for f in log_files %}
+      <li><a href="#" data-file="{{ f }}">{{ f }}</a></li>
+      {% endfor %}
+      {% if not log_files %}
+      <li style="padding:10px 20px;font-size:9px;letter-spacing:0.2em;color:rgba(103,171,205,0.3);">NO FILES</li>
+      {% endif %}
+    </ul>
+  </aside>
+
+  <div id="main">
+    <!-- ログビュー -->
+    <div id="log-view">
+      <div id="controls">
+        <span id="current-file">Select a file</span>
+        <input id="filter" type="text" placeholder="filter...">
+        <label class="toggle">
+          <input type="checkbox" id="autoscroll" checked> Auto Scroll
+        </label>
+        <button class="ctrl-btn" id="clear-btn">Clear</button>
+      </div>
+      <div id="log-container">
+        <span id="empty-msg">↑ Select a file to stream logs</span>
+      </div>
+    </div>
+
+    <!-- IP一覧ビュー -->
+    <div id="ip-view" style="display:none;">
+      <div id="controls">
+        <span id="ip-view-title">IP Address List</span>
+        <button class="ctrl-btn" id="ip-refresh-btn"><i class="fas fa-rotate-right" style="margin-right:5px;"></i>Refresh</button>
+      </div>
+      <div id="ip-container">
+        <p id="ip-loading-msg">Loading...</p>
+        <table id="ip-table">
+          <thead>
+            <tr>
+              <th>IP Address</th>
+              <th>Language</th>
+              <th>Count</th>
+              <th>Success</th>
+              <th>Failed</th>
+              <th>Last Access</th>
+            </tr>
+          </thead>
+          <tbody id="ip-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button id="theme-toggle" title="テーマ切り替え"></button>
+<script>
+  (function() {
+    const btn = document.getElementById('theme-toggle');
+    function applyTheme(t) {
+      document.documentElement.setAttribute('data-theme', t);
+      btn.textContent = t === 'dark' ? '☀' : '🌙';
+      localStorage.setItem('theme', t);
+    }
+    applyTheme(localStorage.getItem('theme') || 'light');
+    btn.addEventListener('click', function() {
+      applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+    });
+  })();
+</script>
+<script>
+  const container = document.getElementById('log-container');
+  const filterInput = document.getElementById('filter');
+  const autoscroll = document.getElementById('autoscroll');
+  const statusDot = document.getElementById('status-dot');
+  const currentFile = document.getElementById('current-file');
+  const logView = document.getElementById('log-view');
+  const ipView = document.getElementById('ip-view');
+  const ipTbody = document.getElementById('ip-tbody');
+  const ipLoadingMsg = document.getElementById('ip-loading-msg');
+  const ipTable = document.getElementById('ip-table');
+
+  let es = null;
+  let emptyMsg = document.getElementById('empty-msg');
+
+  function classify(text) {
+    if (/event=attempt_success|action=login\b/.test(text)) return 'ev-success';
+    if (/event=attempt_failed|login_failed/.test(text))    return 'ev-failed';
+    if (/event=signup/.test(text))                         return 'ev-signup';
+    if (/action=logout/.test(text))                        return 'ev-logout';
+    if (/action=force_delete|action=delete\b/.test(text))  return 'ev-delete';
+    if (/action=download/.test(text))                      return 'ev-download';
+    if (/action=upload/.test(text))                        return 'ev-upload';
+    if (/action=category_view|action=home_view|action=video_play/.test(text)) return 'ev-view';
+    return 'ev-default';
+  }
+
+  function matchesFilter(text) {
+    const q = filterInput.value.trim().toLowerCase();
+    return !q || text.toLowerCase().includes(q);
+  }
+
+  function appendLine(text) {
+    if (emptyMsg) { emptyMsg.remove(); emptyMsg = null; }
+    const el = document.createElement('span');
+    el.className = `log-line ${classify(text)}`;
+    if (!matchesFilter(text)) el.classList.add('hidden');
+    el.textContent = text;
+    container.appendChild(el);
+    if (autoscroll.checked) container.scrollTop = container.scrollHeight;
+  }
+
+  function connectToFile(filename) {
+    if (es) { es.close(); es = null; }
+    container.innerHTML = '';
+    currentFile.textContent = filename;
+    statusDot.className = '';
+    es = new EventSource(`/logs/stream?file=${encodeURIComponent(filename)}`);
+    es.onopen = () => { statusDot.className = 'connected'; };
+    es.onmessage = (e) => appendLine(e.data);
+    es.onerror = () => { statusDot.className = 'disconnected'; };
+  }
+
+  function setActiveTab(el) {
+    document.querySelectorAll('#file-list a').forEach(x => x.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  // ログファイルタブ
+  document.querySelectorAll('#file-list a[data-file]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      setActiveTab(a);
+      logView.style.display = 'flex';
+      ipView.style.display = 'none';
+      connectToFile(a.dataset.file);
+    });
+  });
+
+  // IP一覧タブ
+  document.getElementById('ip-tab').addEventListener('click', e => {
+    e.preventDefault();
+    setActiveTab(e.currentTarget);
+    if (es) { es.close(); es = null; }
+    statusDot.className = '';
+    logView.style.display = 'none';
+    ipView.style.display = 'flex';
+    loadIpList();
+  });
+
+  // IP一覧を初期選択
+  document.getElementById('ip-tab').click();
+
+  // クリア
+  document.getElementById('clear-btn').addEventListener('click', () => {
+    container.innerHTML = '';
+  });
+
+  // フィルター変更時に既存行を再評価
+  filterInput.addEventListener('input', () => {
+    document.querySelectorAll('.log-line').forEach(el => {
+      el.classList.toggle('hidden', !matchesFilter(el.textContent));
+    });
+  });
+
+  // IP一覧
+  async function loadIpList() {
+    ipLoadingMsg.style.display = 'block';
+    ipTable.style.display = 'none';
+    ipTbody.innerHTML = '';
+    try {
+      const res = await fetch('/logs/ip-list');
+      const data = await res.json();
+      data.ips.forEach(item => {
+        const success = item.events['attempt_success'] || 0;
+        const failed = item.events['attempt_failed'] || 0;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="ip-cell">${item.ip}</td>
+          <td class="lang-cell">${item.lang || '—'}</td>
+          <td class="count-cell">${item.count}</td>
+          <td class="success-cell">${success || '—'}</td>
+          <td class="failed-cell">${failed || '—'}</td>
+          <td class="time-cell">${item.last || '—'}</td>
+        `;
+        ipTbody.appendChild(tr);
+      });
+      ipLoadingMsg.style.display = 'none';
+      ipTable.style.display = 'table';
+    } catch {
+      ipLoadingMsg.textContent = 'Failed to load.';
+    }
+  }
+
+  document.getElementById('ip-refresh-btn').addEventListener('click', loadIpList);
+</script>
+</body>
+</html>

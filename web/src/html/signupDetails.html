@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>PERSONAL WEB - signup</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="/static/img/favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon.png">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans%3A400%2C400italic%2C600%2C700%7COswald%3A400%2C300">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Open Sans", sans-serif;
+      letter-spacing: 0.05em;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-image: radial-gradient(circle farthest-corner at center, #223538 0%, #000305 100%);
+      color: #ccc;
+    }
+
+    .box {
+      width: 320px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+      text-align: center;
+    }
+
+    .title {
+      font-family: "Oswald", sans-serif;
+      font-size: 13px;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: #eee;
+    }
+
+    .message {
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      line-height: 2;
+      color: #777;
+    }
+
+    .email {
+      color: #67ABCD;
+    }
+
+    form {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      text-align: left;
+    }
+
+    label {
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: #67ABCD;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(103, 171, 205, 0.3);
+      color: #eee;
+      font-family: "Open Sans", sans-serif;
+      font-size: 13px;
+      letter-spacing: 0.1em;
+      padding: 6px 0;
+      outline: none;
+      transition: border-color 0.3s;
+      width: 100%;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus {
+      border-bottom-color: #67ABCD;
+    }
+
+    .error-msg {
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #cd6767;
+      text-align: center;
+    }
+
+    button[type="submit"] {
+      margin-top: 8px;
+      background: transparent;
+      border: 1px solid rgba(103, 171, 205, 0.4);
+      color: #67ABCD;
+      font-family: "Open Sans", sans-serif;
+      font-size: 10px;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      padding: 12px;
+      cursor: pointer;
+      transition: background 0.3s, border-color 0.3s;
+      width: 100%;
+    }
+
+    button[type="submit"]:hover {
+      background: rgba(103, 171, 205, 0.08);
+      border-color: #67ABCD;
+    }
+
+    .divider {
+      width: 40px;
+      height: 1px;
+      background: rgba(103, 171, 205, 0.25);
+    }
+
+    .sub-link {
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: #555;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    .sub-link:hover { color: #67ABCD; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div class="divider"></div>
+    {% if invalid %}
+    <p class="title">Invalid Link</p>
+    <p class="message error-msg">リンクが無効または期限切れです</p>
+    <a href="/signup" class="sub-link">再送信する</a>
+    {% elif done %}
+    <p class="title">Complete</p>
+    <p class="message">
+      <span class="email">{{ username }}</span><br>
+      の登録が完了しました
+    </p>
+    <a href="/login" class="sub-link">ログインへ</a>
+
+    {% else %}
+    <p class="title">Create Account</p>
+    <p class="message"><span class="email">{{ email }}</span></p>
+    <form method="post" action="/signup/complete">
+      <input type="hidden" name="token" value="{{ token }}">
+      <div class="field">
+        <label for="userName">Username</label>
+        <input type="text" id="userName" name="username" autocomplete="nickname" autofocus>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" autocomplete="new-password">
+      </div>
+      <div class="field">
+        <label for="confirm-password">Confirm Password</label>
+        <input type="password" id="confirm-password" name="confirmPassword" autocomplete="new-password">
+      </div>
+      {% if error %}
+      <p class="error-msg">{{ error }}</p>
+      {% endif %}
+      <button type="submit">Register</button>
+    </form>
+    <a href="/login" class="sub-link">ログインに戻る</a>
+    {% endif %}
+    <div class="divider"></div>
+  </div>
+</body>
+</html>

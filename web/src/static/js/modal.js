@@ -1,32 +1,90 @@
-// /common/modal.js
+/**
+ * モーダルのDOM構造を生成してbodyに追加し、overlay要素を返す。
+ * 表示は行わない（modal-openは付けない）。
+ * 呼び出し側が返り値を保持し、必要なタイミングでclassList.add('modal-open')して表示する。
+ * フォームなど何度も開閉するモーダルに使う。
+ *
+ * @param {object}      options
+ * @param {string}      options.id       - overlay要素のid
+ * @param {string|null} options.icon     - modal-icon内のHTML。nullなら非表示
+ * @param {string}      options.title    - h2テキスト
+ * @param {string}      options.bodyHTML - フィールド等、actionsより前に挿入するHTML
+ * @returns {HTMLElement}
+ */
+export function buildFormModal({ id, icon = null, title, bodyHTML }) {
+  const iconHTML = icon != null ? `<div class="modal-icon">${icon}</div>` : '';
+  document.body.insertAdjacentHTML('beforeend', `
+    <div id="${id}" class="overlay">
+      <div class="modal">
+        ${iconHTML}
+        <h2>${title}</h2>
+        ${bodyHTML}
+        <p class="modal-error" style="display:none;"></p>
+        <div class="actions">
+          <button class="btn save"><span class="btn-inner">保存</span></button>
+          <button class="btn cancel"><span class="btn-inner">キャンセル</span></button>
+        </div>
+      </div>
+    </div>
+  `);
+  return document.getElementById(id);
+}
 
-let initialized = false;
+/**
+ * 通知モーダルを生成・即表示し、閉じたらDOMから破棄する。
+ * 表示のたびに新しい要素を生成する使い捨て方式。
+ * 操作完了後の成功通知など、一度表示すれば不要になるケースに使う。
+ *
+ * @param {object} options
+ * @param {string} options.message - 見出しテキスト
+ * @param {string} options.detail  - 補足テキスト（省略可）
+ */
+export function openNotificationModal({ message, detail = "" }) {
+  const overlay = document.createElement("div");
+  overlay.className = "overlay modal-open";
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-icon"><i class="fa-solid fa-circle-check"></i></div>
+      <h2>${message}</h2>
+      ${detail ? `<p>${detail}</p>` : ""}
+      <div class="actions">
+        <button class="btn cancel"><span class="btn-inner">閉じる</span></button>
+      </div>
+    </div>
+  `;
+  overlay.querySelector("button").addEventListener("click", () => overlay.remove());
+  document.body.appendChild(overlay);
+}
 
-export async function onOpenConfirm({ message, onOk, }) {
-  console.log("xxxini", initialized)
-  if (!initialized) {
-    await initModal();
-    initialized = true;
+let confirmModal = null;
+
+export function openConfirmModal({ message, onOk }) {
+  if (!confirmModal) {
+    document.body.insertAdjacentHTML("beforeend", `
+      <div id="confirm-modal" class="overlay">
+        <div class="modal">
+          <div class="modal-icon">!</div>
+          <h2>削除</h2>
+          <p id="confirm-modal-message"></p>
+          <div class="actions">
+            <button class="btn delete"><span class="btn-inner">削除</span></button>
+            <button class="btn cancel"><span class="btn-inner">キャンセル</span></button>
+          </div>
+        </div>
+      </div>
+    `);
+    confirmModal = document.getElementById("confirm-modal");
   }
 
-  const modal = document.getElementById("confirm-modal");
-  console.log("xxxmodal", modal)
-  modal.querySelector("#confirm-modal-message").textContent = message;
+  confirmModal.querySelector("#confirm-modal-message").textContent = message;
+  confirmModal.classList.add("modal-open");
 
-  modal.classList.add("modal-open");
-
-  modal.querySelector(".btn.delete").onclick = () => {
-    modal.classList.remove("modal-open");
+  confirmModal.querySelector(".btn.delete").onclick = () => {
+    confirmModal.classList.remove("modal-open");
     onOk?.();
   };
 
-  modal.querySelector(".btn.cancel").onclick = () => {
-    modal.classList.remove("modal-open");
+  confirmModal.querySelector(".btn.cancel").onclick = () => {
+    confirmModal.classList.remove("modal-open");
   };
-}
-
-async function initModal() {
-  const res = await fetch("/confirmModal.html");
-  const html = await res.text();
-  document.body.insertAdjacentHTML("beforeend", html);
 }

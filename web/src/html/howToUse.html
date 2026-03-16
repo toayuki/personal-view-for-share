@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}PERSONAL WEB - How To Use{% endblock %}
+
+{% block page_style %}
+<style>
+  .how-to-use-box {
+    width: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 36px;
+  }
+
+  .how-to-use-title {
+    font-family: "Oswald", sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--color-heading);
+  }
+
+  body {
+    background-image: var(--bg-how-to-use);
+    color: var(--color-how-to-use-text);
+  }
+
+  main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+  <div class="how-to-use-box">
+    <p class="how-to-use-title">how to use</p>
+    作成中
+  </div>
+{% endblock %}

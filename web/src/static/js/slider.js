@@ -1,4 +1,4 @@
-var slideshowDuration = 4000;
+var slideshowDuration = 1500;
 var slideshow=$('.main-content .slideshow');
 
 function slideshowSwitch(slideshow,index,auto){
@@ -18,6 +18,9 @@ function slideshowSwitch(slideshow,index,auto){
   var timeout=slideshow.data('timeout');
   clearTimeout(timeout);
   slideshow.data('wait',true);
+  var pages=slideshow.find('.pagination .item');
+  pages.removeClass('is-active');
+  pages.eq(index).addClass('is-active');
   var transition=slideshow.attr('data-transition');
   if(transition=='fade'){
     newSlide.css({
@@ -178,6 +181,95 @@ function homeSlideshowParallax(){
   });
 }
 
+function runIntroSequence(slideshow, onComplete) {
+  var slides = slideshow.find('.slide');
+  console.log("xxxx",slides)
+  var pagination = slideshow.find('.pagination .item');
+  var categorySlides = slides.filter(':not(.slide-add-category)');
+  var categoryTotal = categorySlides.length;
+
+  if (categoryTotal <= 1) { onComplete(); return; }
+
+  var images = categorySlides.find('.image').toArray();
+  var loadPromises = images.map(function(img) {
+    return new Promise(function(resolve) {
+      if (img.complete) { resolve(); return; }
+      img.addEventListener('load', resolve);
+      img.addEventListener('error', resolve);
+    });
+  });
+
+  Promise.all(loadPromises).then(function() {
+    var slidesContainer = slideshow.find('.slides');
+    var w = slideshow.width();
+
+    // 矢印・ページネーションを非表示
+    slideshow.find('.arrows').css('visibility', 'hidden');
+    slideshow.find('.pagination').css('visibility', 'hidden');
+
+    // カテゴリスライドを横に並べる（slide-content は非表示）
+    categorySlides.each(function(i) {
+      $(this).css({ display: 'block', left: i * w, width: w, opacity: 1, zIndex: 2 });
+      $(this).find('.slide-content').css('visibility', 'hidden');
+      $(this).find('.image-container').css('width', w);
+    });
+    slidesContainer.css('width', categoryTotal * w);
+
+    // 全スライドを右へ流す（カテゴリ数 × 0.4秒）
+    TweenMax.to(slidesContainer, categoryTotal*0.4, {
+      x: -(categoryTotal - 1) * w,
+      ease: Power2.easeInOut,
+      force3D: true,
+      onComplete: function() {
+        // ウェルカムテキストを生成
+        var welcome = $('<div class="intro-welcome"><div class="intro-welcome-text">Share Your Memories</div></div>');
+        slideshow.find('.slideshow-inner').append(welcome);
+        var welcomeText = welcome.find('.intro-welcome-text');
+
+        // 最初のスライドへ戻りながらテキストをフェードイン
+        TweenMax.to(slidesContainer, 0.6, {
+          x: 0,
+          ease: Power2.easeOut,
+          force3D: true,
+        });
+        TweenMax.to(welcomeText, 0.5, {
+          opacity: 1,
+          delay: 0.1,
+          onComplete: function() {
+            // テキストをフェードアウトしてリセット
+            TweenMax.to(welcome, 0.5, {
+              opacity: 0,
+              ease: Power1.easeIn,
+              delay: 0.8,
+              onComplete: function() {
+                welcome.remove();
+
+                slideshow.find('.arrows').css('visibility', '');
+                slideshow.find('.pagination').css('visibility', '');
+
+                categorySlides.each(function() {
+                  $(this).css({ display: '', left: '', width: '', opacity: '', zIndex: '' });
+                  $(this).find('.slide-content').css('visibility', '');
+                  $(this).find('.image-container').css('width', '');
+                });
+                TweenMax.set(slidesContainer, { clearProps: 'all' });
+                slidesContainer.css('width', '');
+
+                slides.removeClass('is-active');
+                pagination.removeClass('is-active');
+                slides.eq(0).addClass('is-active');
+                pagination.eq(0).addClass('is-active');
+
+                onComplete();
+              }
+            });
+          }
+        });
+      }
+    });
+  });
+}
+
 $(document).ready(function() {
  $('.slide').addClass('is-loaded');
 
@@ -208,11 +300,17 @@ $('.slideshow').each(function(){
   });
 */
 
-var timeout=setTimeout(function(){
-  slideshowNext(slideshow,false,true);
-},slideshowDuration);
+ slideshow.on('click', function() {
+  clearTimeout($(this).data('timeout'));
+  $(this).data('timeout', null);
+ });
 
-slideshow.data('timeout',timeout);
+ runIntroSequence(slideshow, function() {
+  var timeout=setTimeout(function(){
+    slideshowNext(slideshow,false,true);
+  },slideshowDuration);
+  slideshow.data('timeout',timeout);
+ });
 });
 
 if($('.main-content .slideshow').length > 1) {

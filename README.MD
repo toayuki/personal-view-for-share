@@ -12,3 +12,14 @@
 apiサーバー起動手順
 1. venv環境起動：source venv/bin/activate
 2. webサーバー起動：uvicorn src.main:app --reload --host 192.168.0.7 --port 8000
+
+sqlite
+データアクセス
+apiディレクトリで以下を実行
+sqlite3 main.db
+
+スリープにしないよう以下を実行
+caffeinate -i
+
+cloudflare tunnel起動コマンド
+cloudflared tunnel --config ~/.cloudflared/config.yml run my-tunnel

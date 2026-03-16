@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>PERSONAL WEB - 招待</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="/static/img/favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon.png">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans%3A400%2C400italic%2C600%2C700%7COswald%3A400%2C300">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+    }
+
+    body {
+      font-family: "Open Sans", sans-serif;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    .bg {
+      position: fixed;
+      inset: 0;
+      background-color: #000305;
+      {% if image_url %}
+      background-image: url('{{ image_url }}');
+      background-size: cover;
+      background-position: center;
+      {% else %}
+      background-image: radial-gradient(circle farthest-corner at center, #223538 0%, #000305 100%);
+      {% endif %}
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+    }
+
+    .content {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      text-align: center;
+      padding: 40px 24px;
+    }
+
+    .label {
+      font-family: "Oswald", sans-serif;
+      font-size: 10px;
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .category-name {
+      font-family: "Oswald", sans-serif;
+      font-size: clamp(28px, 6vw, 52px);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #fff;
+      line-height: 1.2;
+    }
+
+    .divider {
+      width: 40px;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-join {
+      display: inline-block;
+      padding: 14px 40px;
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      color: #fff;
+      font-family: "Oswald", sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .btn-join:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: #fff;
+    }
+
+    .sub-links {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .sub-link {
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.4);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .sub-link:hover { color: rgba(255, 255, 255, 0.8); }
+
+    .error-title {
+      font-family: "Oswald", sans-serif;
+      font-size: 13px;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: #eee;
+    }
+
+    .error-msg {
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      color: rgba(255, 255, 255, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="overlay"></div>
+  <div class="content">
+    {% if invalid %}
+      <div class="divider"></div>
+      <p class="error-title">Invalid Link</p>
+      <p class="error-msg">リンクが無効または期限切れです</p>
+      <a href="/login" class="sub-link">ログインへ</a>
+      <div class="divider"></div>
+    {% else %}
+      <p class="label">You're invited</p>
+      <p class="category-name">{{ category_name or 'Category' }}</p>
+      <div class="divider"></div>
+      {% if is_logged_in %}
+      <form method="post" action="/invite/accept" style="margin:0;">
+        <input type="hidden" name="token" value="{{ token }}">
+        <button type="submit" class="btn-join">参加する</button>
+      </form>
+      <a href="/" class="sub-link">スキップ</a>
+      {% else %}
+      <a href="/login?invite={{ token }}" class="btn-join">ログインして参加</a>
+      <div class="sub-links">
+        <a href="/signup?invite={{ token }}" class="sub-link">新規登録はこちら</a>
+      </div>
+      {% endif %}
+    {% endif %}
+  </div>
+</body>
+</html>
