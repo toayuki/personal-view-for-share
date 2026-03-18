@@ -178,6 +178,10 @@ body.sub_page#utopia {
 	background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url("../utopia/ut_003.jpg");
 }
 
+body.sub_page#latte {
+	background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url("../latte/IMG_0507.jpg");
+}
+
 body.sub_page#read {
 	background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url("../shiro/ar_001.jpg");
 }
@@ -880,6 +884,54 @@ body main label.file-link {
 .btn.cancel:hover {
   color: #999;
   border-color: rgba(255, 255, 255, 0.25);
+}
+
+/*
+変換中プログレスバー
+-------------------------------------------*/
+.converting-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 150px;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.5s ease;
+}
+
+.grid-item:not(.converting) .converting-overlay {
+  opacity: 0;
+}
+
+.converting-progress-wrap {
+  width: 65%;
+  height: 2px;
+  background: rgba(103, 171, 205, 0.2);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.converting-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: #67ABCD;
+  border-radius: 1px;
+  transition: width 0.4s ease;
+}
+
+.converting-overlay span {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #67ABCD;
 }
 
 @keyframes fadeIn {

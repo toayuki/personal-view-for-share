@@ -11,7 +11,7 @@ import shutil
 from pathlib import Path
 import requests
 from dotenv import load_dotenv  # type: ignore
-from fastapi import BackgroundTasks, FastAPI, File, Request, UploadFile
+from fastapi import BackgroundTasks, FastAPI, File, Query, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -23,6 +23,26 @@ load_dotenv()
 BASE_DIR = Path(os.getenv("CONTENTS_SAVE_DIR", ""))
 API_URL = os.getenv("API_URL", "")
 app = FastAPI()
+
+# HLS変換状態を管理するメモリストア
+# {stored_file_name: {"status": "converting"|"done"|"error", "progress": 0-100}}
+conversion_tasks: dict[str, dict] = {}
+
+
+def _convert_to_hls_tracked(stored_file_name: str, input_path, output_dir):
+    """HLS変換を実行し、変換状態・進捗率を更新する"""
+    conversion_tasks[stored_file_name] = {"status": "converting", "progress": 0}
+
+    def on_progress(pct: int) -> None:
+        if stored_file_name in conversion_tasks:
+            conversion_tasks[stored_file_name]["progress"] = pct
+
+    try:
+        convert_to_hls(input_path, output_dir, on_progress=on_progress)
+    except Exception:
+        conversion_tasks[stored_file_name] = {"status": "error", "progress": 0}
+        return
+    conversion_tasks.pop(stored_file_name, None)
 app.mount(path="/static", app=StaticFiles(directory="src/static"), name="static")
 html = Jinja2Templates(directory="src/html")
 
@@ -54,6 +74,18 @@ async def confirm_modal(request: Request):
 async def edit_modal(request: Request):
     """editモーダルを返す"""
     return html.TemplateResponse("editModal.html", {"request": request})
+
+
+@app.get("/latte.html", response_class=HTMLResponse)
+async def latte_page(request: Request):
+    """latteページを返す"""
+    context = {
+        "request": request,
+        "body_class": "sub_page",
+        "body_id": "latte",
+        "title_name": "PERSONAL - latte",
+    }
+    return html.TemplateResponse("latte.html", context)
 
 
 @app.get("/shiro.html", response_class=HTMLResponse)
@@ -178,7 +210,8 @@ async def upload_file(contents_type: str, background_tasks: BackgroundTasks, fil
         hls_output_dir = target_dir_path / "videos" / hls_dir_name
         view_file_name = f"{hls_dir_name}/index.m3u8"
         # HLS変換とサムネイル生成はバックグラウンドで実行
-        background_tasks.add_task(convert_to_hls, stored_file_path, hls_output_dir)
+        conversion_tasks[stored_file_name] = {"status": "converting", "progress": 0}
+        background_tasks.add_task(_convert_to_hls_tracked, stored_file_name, stored_file_path, hls_output_dir)
         background_tasks.add_task(
             create_thumbnail.create_thumbnail,
             stored_file_path,
@@ -213,6 +246,28 @@ async def upload_file(contents_type: str, background_tasks: BackgroundTasks, fil
         timeout=10,
     )
     return {"filename": file.filename}
+
+@app.get("/conversion-status/{stored_file_name}")
+def get_conversion_status(stored_file_name: str):
+    """HLS変換の状態と進捗率を返す。完了・エラー時はエントリを削除する"""
+    info = conversion_tasks.get(stored_file_name)
+    if info is None:
+        return {"status": "done", "progress": 100}
+    return {"status": info["status"], "progress": info["progress"]}
+
+
+@app.get("/conversion-status")
+def get_conversion_status_batch(names: list[str] = Query(default=[])):
+    """複数のHLS変換状態を一括取得する"""
+    result = {}
+    for name in names:
+        info = conversion_tasks.get(name)
+        if info is None:
+            result[name] = {"status": "done", "progress": 100}
+        else:
+            result[name] = {"status": info["status"], "progress": info["progress"]}
+    return result
+
 
 @app.get("/delete/{target_id}")
 def delete(target_id: str):
