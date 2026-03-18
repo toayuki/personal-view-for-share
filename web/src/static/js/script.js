@@ -3,7 +3,6 @@ import { onOpenEdit } from "./editModal.js";
 
 //Gメニュー
 var bnrBtn = $('#g_navi');
-var menuOpen = false;
 var $header = $('header');
 var scrollpos;
 
@@ -15,14 +14,12 @@ $(function () {
   $(".menu_btn").on("click", function () {
     if (ttt == false) {
       bnrBtn.stop().fadeIn();
-      menuOpen = true;
       $('.bg_bl').fadeIn();
       scrollpos = $(window).scrollTop();
       $(".menu_btn").addClass('opened');
       ttt = true;
     } else {
       bnrBtn.stop().fadeOut();
-      menuOpen = false;
       $('.bg_bl').fadeOut();
       $(".menu_btn").removeClass('opened');
       window.scrollTo(0, scrollpos);
@@ -61,7 +58,7 @@ const spinner = document.getElementById('loading');
 
 // ファイルアップロード処理
 
-document.getElementById('fileUpload').addEventListener('change', async (e) => {
+document.getElementById('fileUpload')?.addEventListener('change', async (e) => {
   const files = Array.from(e.target.files ?? []);
   if (files.length === 0) return;
 
@@ -101,18 +98,9 @@ document.getElementById('fileUpload').addEventListener('change', async (e) => {
 });
 
 const optionsBtn = document.getElementById("optionsBtn");
-const deleteSelectedBtn = document.getElementById("deleteSelectedBtn");
 
 function getSelectedItems() {
   return Array.from(document.querySelectorAll(".grid-item.selected"));
-}
-
-function updateDeleteSelectedBtn() {
-  const count = getSelectedItems().length;
-  if (deleteSelectedBtn) {
-    deleteSelectedBtn.style.display = count > 0 ? "" : "none";
-    deleteSelectedBtn.textContent = `delete (${count})`;
-  }
 }
 
 if (optionsBtn) {
@@ -121,30 +109,7 @@ if (optionsBtn) {
     optionsBtn.textContent = isEditMode ? "done" : "options";
     if (!isEditMode) {
       document.querySelectorAll(".grid-item.selected").forEach(el => el.classList.remove("selected"));
-      updateDeleteSelectedBtn();
     }
-  });
-}
-
-if (deleteSelectedBtn) {
-  deleteSelectedBtn.addEventListener("click", async () => {
-    const selected = getSelectedItems();
-    if (selected.length === 0) return;
-    await onOpenConfirm({
-      message: `${selected.length}件を削除しますか？`,
-      onOk: async () => {
-        for (const item of selected) {
-          try {
-            const res = await fetch(`/delete/${item.dataset.id}`);
-            if (!res.ok) throw new Error(`delete failed: ${res.status}`);
-            item.remove();
-          } catch (err) {
-            console.error("削除に失敗しました", err);
-          }
-        }
-        updateDeleteSelectedBtn();
-      },
-    });
   });
 }
 
@@ -154,7 +119,6 @@ document.addEventListener("click", async (e) => {
     if (thumbnail) {
       e.preventDefault();
       thumbnail.closest(".grid-item").classList.toggle("selected");
-      updateDeleteSelectedBtn();
       return;
     }
   }
@@ -168,7 +132,6 @@ document.addEventListener("click", async (e) => {
       const clickedItem = deleteLink.closest(".grid-item");
       if (clickedItem && !clickedItem.classList.contains("selected")) {
         clickedItem.classList.add("selected");
-        updateDeleteSelectedBtn();
       }
       const targets = getSelectedItems();
       await onOpenConfirm({
@@ -183,7 +146,6 @@ document.addEventListener("click", async (e) => {
               console.error("削除に失敗しました", err);
             }
           }
-          updateDeleteSelectedBtn();
         },
       });
     } else {
@@ -212,7 +174,6 @@ document.addEventListener("click", async (e) => {
       const clickedItem = forceDeleteLink.closest(".grid-item");
       if (clickedItem && !clickedItem.classList.contains("selected")) {
         clickedItem.classList.add("selected");
-        updateDeleteSelectedBtn();
       }
       const targets = getSelectedItems();
       await onOpenConfirm({
@@ -227,7 +188,6 @@ document.addEventListener("click", async (e) => {
               console.error("強制削除に失敗しました", err);
             }
           }
-          updateDeleteSelectedBtn();
         },
       });
     } else {

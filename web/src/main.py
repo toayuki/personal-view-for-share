@@ -12,7 +12,7 @@ from pathlib import Path
 import requests
 from dotenv import load_dotenv  # type: ignore
 from fastapi import BackgroundTasks, FastAPI, File, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -25,6 +25,11 @@ API_URL = os.getenv("API_URL", "")
 app = FastAPI()
 app.mount(path="/static", app=StaticFiles(directory="src/static"), name="static")
 html = Jinja2Templates(directory="src/html")
+
+
+@app.get("/favicon.ico")
+def favicon():
+    return Response(status_code=204)
 
 
 @app.get("/", response_class=HTMLResponse)

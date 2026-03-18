@@ -1,16 +1,5 @@
 @charset "utf-8";
 
-/*
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-原則として、許可なしの再配布は禁止させていただきます。
-また、無料でお使いになる場合は、【ＰＲ枠】のリンクは全て削除禁止です。
-（※加工後の削除も禁止させていただいておりますのでご了承ください。）
-PR枠の削除（有料プラン）に関するお問い合わせや、その他ご不明な点は、
-https://www.megapx.com/contact.html、または
-https://www.s-hoshino.com/info.htmlのフォームよりお問い合わせください。
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-*/
-
 body {
 	font: 14px/2 "Open sans", sans-serif;
 	letter-spacing: 0.05em;
@@ -787,14 +776,6 @@ footer .box_pr li {
 	}
 }
 
-body main label.file-link--danger {
-	color: #e07070;
-}
-
-body main label.file-link--danger:hover {
-	color: #ff9999;
-}
-
 body main label.file-link {
 	display: block;
 	color: #EEE;
@@ -804,129 +785,6 @@ body main label.file-link {
 	/* font-size: 5vw; */
 	font-weight: normal;
 }
-
-/* 以下モーダルcss */
-.layer {
-  background: rgba(0, 0, 0, .2);
-  width: 100%;
-  height: 100%;
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: -1;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 1s linear, visibility 1s linear, z-index 1s linear;
-}
-
-
-
-.layer.is-open {
-  z-index: 999;
-  opacity: 1;
-  visibility: visible;
-}
-
-.layer.is-open .modal{
-  opacity: 1;
-  visibility: visible;
-}
-
-.modal__button-wrap {
-  position: absolute;
-  right: 10px;
-  top: -28px;
-  display: inline-flex;
-}
-
-
-.close-button {
-  position: relative;
-  width: 39px;
-  height: 39px;
-  background: orange;
-  border-radius: 50%;
-  padding: 0;
-  border: transparent;
-  cursor: pointer;
-}
-
-.close-button span {
-  width: 25px;
-  height: 2px;
-  background: #fff;
-  display: inline-block;
-  position: absolute;
-  left: calc(50% - 12px);
-  top: 50%;
-  border-radius: 20px;
-}
-
-.close-button span:nth-child(1) {
-  transform: rotate(45deg) translate(-1px, -1px);
-}
-
-.close-button span:nth-child(2) {
-  transform: rotate(-45deg) translate(1px, -1px);
-}
-
-
-
-/* .modal {
-  position: relative;
-  margin-right: auto;
-  margin-left: auto;
-  width: 80%;
-  min-width: 440px;
-  opacity: 0;
-  visibility:visible;
-  transition:  visibility .7s linear, opacity .7s linear;
-}
-
-
-.modal__inner {
-  margin-top: 125px;
-  margin-bottom: 125px;
-  position: relative;
-  margin-left: auto;
-  margin-right: auto;
-  background: #fff;
-  box-shadow: 3px 4px 4px rgba(0, 0, 0, 0.25);
-  border-radius: 13px;
-  display: block;
-  padding: 21px 8px 21px;
-  height: auto;
-}
-
-.modal__content {
-  padding-top: 15px;
-  padding-bottom: 23px;
-}
-
-
-.modal__button-area {
-  max-width: 843px;
-  margin-right: auto;
-  margin-left: auto;
-  margin-top: 17px;
-  padding-top: 15px;
-}
-
-
-.button {
-  background: orange;
-  border-radius: 12px;
-  box-shadow: 2px 4px 6px 3px rgba(0, 0, 0, .24);
-  border: 1px solid orange;
-  font-size: 16px;
-  line-height: 1.6;
-  display: block;
-  padding: 12px 20px;
-  color: #fff;
-  text-align: center;
-  cursor: pointer;
-  margin: 0;
-} */
 
 /* 確認モーダル */
 .overlay {

@@ -2,9 +2,7 @@ fetch("http://192.168.0.7:8000/shiro/getList")
   .then(response => response.json())
   .then(data => {
     const result = document.getElementById("result");
-    console.log("xxx結果", result)
     data.items.forEach((item, index) => {
-      console.log("xxxxx", index)
       const li = document.createElement("li");
       li.className = "grid-item js-anim-item"
       li.dataset.id = item.id
@@ -42,7 +40,6 @@ fetch("http://192.168.0.7:8000/shiro/getList")
       li.appendChild(linkArea);
 
       const a = document.createElement("a");
-      console.log("xxxxGetList実行")
       a.href = `http://192.168.0.7:3000/personal-web/contents/shiro/${item.file_type === "video" ? "video" : "img"}/${item.file_name}`
       a.dataset.fancybox = "gallery";
       a.dataset.type = item.file_type === "video" ? "html5video" : "image";
@@ -56,7 +53,6 @@ fetch("http://192.168.0.7:8000/shiro/getList")
     });
   })
   .catch(err => {
-    console.log("xxxここ")
     document.getElementById("result").textContent = "取得失敗";
     console.error(err);
   });
