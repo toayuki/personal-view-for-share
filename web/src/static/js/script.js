@@ -88,7 +88,8 @@ document.getElementById('fileUpload')?.addEventListener('change', async (e) => {
         reject();
       };
 
-      xhr.open('POST', '/upload/shiro');
+      const contentsType = document.getElementById('result')?.dataset.contentsType ?? 'shiro';
+      xhr.open('POST', `/upload/${contentsType}`);
       xhr.send(formData);
     }).catch(() => {});
   }
@@ -110,6 +111,15 @@ if (optionsBtn) {
     if (!isEditMode) {
       document.querySelectorAll(".grid-item.selected").forEach(el => el.classList.remove("selected"));
     }
+  });
+}
+
+const selectAllBtn = document.getElementById("selectAllBtn");
+if (selectAllBtn) {
+  selectAllBtn.addEventListener("click", () => {
+    const allItems = document.querySelectorAll(".grid-item");
+    const allSelected = [...allItems].every(el => el.classList.contains("selected"));
+    allItems.forEach(el => el.classList.toggle("selected", !allSelected));
   });
 }
 

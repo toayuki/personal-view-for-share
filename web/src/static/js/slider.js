@@ -18,6 +18,9 @@ function slideshowSwitch(slideshow,index,auto){
   var timeout=slideshow.data('timeout');
   clearTimeout(timeout);
   slideshow.data('wait',true);
+  var pages=slideshow.find('.pagination .item');
+  pages.removeClass('is-active');
+  pages.eq(index).addClass('is-active');
   var transition=slideshow.attr('data-transition');
   if(transition=='fade'){
     newSlide.css({

@@ -79,10 +79,10 @@ fetch(`http://192.168.0.7:8000/${contentsType}/getList`)
         .then(statuses => {
           videoItems.forEach(el => {
             const d = statuses[el.dataset.storedFileName];
-            if (!d || d.status !== "converting") {
+            if (!d || d.status === "done" || d.status === "error") {
               el.classList.remove("converting");
             } else {
-              _updateBar(el, d.progress ?? 0);
+              _updateBar(el, d.progress ?? 0, d.status);
             }
           });
         })
@@ -96,11 +96,13 @@ fetch(`http://192.168.0.7:8000/${contentsType}/getList`)
     console.error(err);
   });
 
-function _updateBar(item, progress) {
+function _updateBar(item, progress, status) {
   const bar = item.querySelector(".converting-progress-bar");
   const label = item.querySelector(".converting-overlay span");
-  if (bar) bar.style.width = `${progress}%`;
-  if (label) label.textContent = `変換中 ${progress}%`;
+  const isWaiting = status === "waiting";
+  if (bar) bar.style.width = isWaiting ? "0%" : `${progress}%`;
+  if (label) label.textContent = isWaiting ? "待機中" : `変換中 ${progress}%`;
+  if (label) label.dataset.status = status ?? "converting";
 }
 
 function fetchConversionStatuses(names) {
@@ -120,7 +122,7 @@ function startConversionPolling() {
       items.forEach(item => {
         const d = statuses[item.dataset.storedFileName];
         if (!d) return;
-        _updateBar(item, d.progress ?? 0);
+        _updateBar(item, d.progress ?? 0, d.status);
         if (d.status === "done" || d.status === "error") {
           item.classList.remove("converting");
         }

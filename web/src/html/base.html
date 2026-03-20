@@ -14,7 +14,10 @@
     <link rel="stylesheet" href="static/css/style.css?v=20260221">
     {% endblock %}
 
-    {% block extra_css %}{% endblock %}
+    {% block extra_css %}
+    <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Open+Sans%3A400%2C400italic%2C600%2C700%2C700italic%7COswald%3A400%2C300%7CVollkorn%3A400%2C400italic'>
+    <link rel="stylesheet" href="/static/css/lightbox.css">
+    {% endblock %}
 
     <link href="https://use.fontawesome.com/releases/v6.6.0/css/all.css" rel="stylesheet">
 </head>
@@ -42,20 +45,25 @@
 
         <nav id="g_navi">
             <ul>
-                <li class="sml"><a href="/">MegaPx Top</a></li>
                 <li class="sml"><a href="/">HOME</a></li>
-                <li><a href="texture.html"><img src="/static/texture/te_003.jpg" />Texture</a></li>
+                <li><a href="latte.html"><img src="/static/texture/te_003.jpg" />latte</a></li>
                 <li><a href="shiro.html"><img src="/static/shiro/dr_001.jpg" />shiro</a></li>
-                <li><a href="utopia.html"><img src="/static/utopia/ut_002.jpg" />Utopia</a></li>
-                <li><a href="drawing.html"><img src="/static/drawing/dr_003.jpg" />Drawing</a></li>
-                <li><a href="fantasy.html"><img src="/static/fantasy/fa_002.jpg" />Fantasy</a></li>
                 <li class="sml"><a href="read.html">Read Me</a></li>
             </ul>
         </nav>
     </header>
 
     <main class="{{ main_class | default('') }}">
-    {% block content %}{% endblock %}
+    {% block content %}
+    <h3>{{ body_id }}</h3>
+    <label for="fileUpload" class="file-link">upload</label>
+    <label id="optionsBtn" class="file-link">options</label>
+    <label id="selectAllBtn" class="file-link">select all</label>
+    <input type="file" id="fileUpload" name="file" multiple style="display:none;">
+    <div class="wrapper">
+      <ul class="grid js-anim" id="result" data-contents-type="{{ body_id }}"></ul>
+    </div>
+    {% endblock %}
     </main>
 
     <footer>
@@ -71,7 +79,13 @@
         </address>
     </footer>
 
-    {% block script %}{% endblock %}
+    {% block script %}
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script type="module" src="/static/js/script.js"></script>
+    <script src="/static/js/getList.js"></script>
+    <script src="/static/js/lightbox.js"></script>
+    {% endblock %}
 
 </body>
 

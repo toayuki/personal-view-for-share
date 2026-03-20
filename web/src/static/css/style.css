@@ -790,6 +790,14 @@ body main label.file-link {
 	font-weight: normal;
 }
 
+#selectAllBtn {
+	display: none;
+}
+
+body.edit-mode #selectAllBtn {
+	display: block;
+}
+
 /* 確認モーダル */
 .overlay {
   position: fixed;
@@ -932,6 +940,10 @@ body main label.file-link {
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: #67ABCD;
+}
+
+.converting-overlay span[data-status="waiting"] {
+  color: #999;
 }
 
 @keyframes fadeIn {
