@@ -239,3 +239,8 @@ document.addEventListener("click", async (e) => {
     });
   }
 })
+
+document.getElementById('logoutBtn')?.addEventListener('click', e => {
+  e.preventDefault();
+  fetch('/logout', { method: 'POST' }).then(() => location.href = '/login');
+});

@@ -163,7 +163,7 @@ body.sub_page#texture {
 }
 
 body.sub_page#shiro {
-	background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85));
+	background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url("../shiro/IMG_0936.DNG");
 }
 
 body.sub_page#drawing {
