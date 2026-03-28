@@ -225,7 +225,7 @@ document.addEventListener("click", async (e) => {
       title: editLink.dataset.title,
       onSave: async ({ title }) => {
         try {
-          const res = await fetch(`http://192.168.0.7:8000/update/${editLink.dataset.id}`, {
+          const res = await fetch(`${window.location.origin}/update/${editLink.dataset.id}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ title }),

@@ -36,7 +36,7 @@
               <div class="title">shiro</div>
               <div id="result">読み込み中...</div>
               <script>
-                fetch("http://192.168.0.7:8000/message")
+                fetch(`https://share-api.toa-yuki.com/message`)
                   .then(response => {
                     console.log("xxx受け取った")
                     return response.json()

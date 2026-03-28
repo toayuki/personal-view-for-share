@@ -1,7 +1,7 @@
 const result = document.getElementById("result");
 const contentsType = result?.dataset.contentsType;
 
-fetch(`http://192.168.0.7:8000/${contentsType}/getList`)
+fetch(`https://share-api.toa-yuki.com/${contentsType}/getList`)
   .then(response => response.json())
   .then(data => {
     data.items.forEach((item) => {
@@ -37,12 +37,12 @@ fetch(`http://192.168.0.7:8000/${contentsType}/getList`)
       li.appendChild(linkArea);
 
       const a = document.createElement("a");
-      a.href = `http://192.168.0.7:3000/personal-web/contents/${contentsType}/${item.file_type === "video" ? "video" : "img"}/${item.file_name}`;
+      a.href = `https://${window.location.hostname}/personal-web/contents/${contentsType}/${item.file_type === "video" ? "video" : "img"}/${item.file_name}`;
       a.dataset.fancybox = "gallery";
       a.dataset.type = item.file_type === "video" ? "html5video" : "image";
 
       const img = document.createElement("img");
-      img.src = `http://192.168.0.7:3000/personal-web/contents/${contentsType}/thumbnail/${item.thumbnail_file_name ?? item.file_name}`;
+      img.src = `https://${window.location.hostname}/personal-web/contents/${contentsType}/thumbnail/${item.thumbnail_file_name ?? item.file_name}`;
       a.appendChild(img);
 
       li.appendChild(a);
@@ -92,7 +92,7 @@ fetch(`http://192.168.0.7:8000/${contentsType}/getList`)
     startConversionPolling();
   })
   .catch(err => {
-    if (result) result.textContent = "取得失敗";
+    if (result) result.textContent = `取得失敗`;
     console.error(err);
   });
 

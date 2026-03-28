@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>PERSONAL WEB - Login</title>
+  <title>PERSONAL WEB - Register</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans%3A400%2C400italic%2C600%2C700%7COswald%3A400%2C300">
   <style>
@@ -19,7 +19,7 @@
       color: #ccc;
     }
 
-    .login-box {
+    .box {
       width: 320px;
       display: flex;
       flex-direction: column;
@@ -27,12 +27,20 @@
       gap: 36px;
     }
 
-    .login-title {
+    .title {
       font-family: "Oswald", sans-serif;
       font-size: 13px;
       letter-spacing: 0.4em;
       text-transform: uppercase;
       color: #eee;
+    }
+
+    .description {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      color: #666;
+      text-align: center;
+      line-height: 1.8;
     }
 
     form {
@@ -55,8 +63,7 @@
       color: #67ABCD;
     }
 
-    input[type="text"],
-    input[type="password"] {
+    input[type="email"] {
       background: transparent;
       border: none;
       border-bottom: 1px solid rgba(103, 171, 205, 0.3);
@@ -70,9 +77,16 @@
       width: 100%;
     }
 
-    input[type="text"]:focus,
-    input[type="password"]:focus {
+    input[type="email"]:focus {
       border-bottom-color: #67ABCD;
+    }
+
+    .success-msg {
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #67ABCD;
+      text-align: center;
     }
 
     .error-msg {
@@ -124,23 +138,22 @@
   </style>
 </head>
 <body>
-  <div class="login-box">
-    <p class="login-title">Personal Web</p>
-    <form method="post" action="/login">
+  <div class="box">
+    <p class="title">Register</p>
+    <p class="description">メールアドレスを送信してください</p>
+    <form method="post" action="/register">
       <div class="field">
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" autocomplete="username" autofocus>
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" autocomplete="email" autofocus>
       </div>
-      <div class="field">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" autocomplete="current-password">
-      </div>
-      {% if error %}
-      <p class="error-msg">Invalid credentials</p>
+      {% if success %}
+      <p class="success-msg">送信しました</p>
+      {% elif error %}
+      <p class="error-msg">送信に失敗しました</p>
       {% endif %}
-      <button type="submit">Enter</button>
+      <button type="submit">Send</button>
     </form>
-    <a href="/register" class="sub-link">新規会員登録</a>
+    <a href="/login" class="sub-link">ログインに戻る</a>
   </div>
 </body>
 </html>

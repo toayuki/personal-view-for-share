@@ -20,7 +20,26 @@ CREATE TABLE IF NOT EXISTS contents (
     contents_type TEXT,
     file_type TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    update_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted_at DATETIME
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    display_name TEXT,
+    email_address TEXT UNIQUE NOT NULL, 
+    role TEXT DEFAULT 'user',
+    status INTEGER DEFAULT 1,
+    last_login_at DATETIME,
+    login_fail_count INTEGER DEFAULT 0,
+    password_reset_token TEXT,
+    password_reset_expires_at DATETIME
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     deleted_at DATETIME
 )
 """)

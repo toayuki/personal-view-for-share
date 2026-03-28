@@ -3,11 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
 
 app = FastAPI()
-webUrl = "http://192.168.0.7:3000"
+webUrl = "https://192.168.0.7:3000"
+globalUrl = "https://share.toa-yuki.com"
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         webUrl,
+        globalUrl
     ],
     allow_credentials=True,
     allow_methods=["*"],
