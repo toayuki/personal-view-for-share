@@ -6,7 +6,7 @@ import os
 import subprocess
 from pathlib import Path
 from dotenv import load_dotenv
-from PIL import Image
+from PIL import Image, ImageOps
 import pillow_heif
 from src.services import get_file_type
 
@@ -44,6 +44,7 @@ def make_square_thumbnail_for_image(input_path: Path, output_path: Path, size=30
         img = Image.frombytes(heif_file.mode, heif_file.size, heif_file.data, "raw")
     else:
         img = Image.open(input_path)
+    img = ImageOps.exif_transpose(img)
     w, h = img.size
     # PNG の場合は RGB に変換（透過情報を無視）
     if img.mode != "RGB":
