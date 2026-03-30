@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from datetime import datetime
 import os
+from urllib.parse import quote
 import secrets
 import shutil
 from pathlib import Path
@@ -46,7 +47,7 @@ is_debug_mode = True
 # 有効なセッショントークンを管理するメモリストア
 active_sessions: set[str] = set()
 
-_PUBLIC_PATHS = {"/login", "/register", "/register/confirm", "/favicon.ico"}
+_PUBLIC_PATHS = {"/login", "/signup", "/signup/details", "/signup/complete", "/favicon.ico"}
 
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
@@ -106,7 +107,8 @@ async def login_post(
     username: str = Form(...),
     password: str = Form(...),
 ):
-    if username == LOGIN_USER and password == LOGIN_PASSWORD:
+    res = requests.post(f"{API_URL}/login/verify", json={"username": username, "password": password}, timeout=10)
+    if res.status_code == 200:
         token = secrets.token_urlsafe(32)
         active_sessions.add(token)
         response = RedirectResponse(url="/", status_code=302)
@@ -115,19 +117,24 @@ async def login_post(
     return html.TemplateResponse("login.html", {"request": request, "error": True})
 
 
-@app.get("/register", response_class=HTMLResponse)
-async def register_page(request: Request):
-    return html.TemplateResponse("register.html", {"request": request})
+@app.get("/signup", response_class=HTMLResponse)
+async def signup_page(request: Request):
+    return html.TemplateResponse("signup.html", {"request": request})
 
 
-@app.post("/register", response_class=HTMLResponse)
-async def register_post(request: Request, email: str = Form(...)):
+@app.post("/signup")
+async def signup_post(request: Request):
+    data = await request.json()
+    email = data.get("email", "").strip()
+    if not email:
+        return Response(status_code=400, content='{"error":"email is required"}', media_type="application/json")
     token = secrets.token_urlsafe(32)
     pending_registrations[token] = {
         "email": email,
         "expires": datetime.now() + timedelta(hours=24),
     }
-    confirm_url = str(request.base_url) + f"register/confirm?token={token}"
+    origin = request.headers.get("origin", str(request.base_url).rstrip("/"))
+    confirm_url = f"{origin}/signup/details?token={token}"
     try:
         msg = MIMEText(
             f"以下のリンクから登録を完了してください（24時間有効）\n\n{confirm_url}",
@@ -141,21 +148,41 @@ async def register_post(request: Request, email: str = Form(...)):
             server.starttls()
             server.login(SMTP_USER, SMTP_PASSWORD)
             server.send_message(msg)
-        return html.TemplateResponse("register.html", {"request": request, "success": True})
+        return Response(content='{"ok":true}', media_type="application/json")
     except Exception as e:
         pending_registrations.pop(token, None)
         print(f"メール送信エラー: {e}")
-        return html.TemplateResponse("register.html", {"request": request, "error": True})
+        return Response(status_code=500, content='{"error":"failed to send email"}', media_type="application/json")
 
 
-@app.get("/register/confirm", response_class=HTMLResponse)
-async def register_confirm(request: Request, token: str = ""):
+@app.get("/signup/details", response_class=HTMLResponse)
+async def signup_details(request: Request, token: str = ""):
     entry = pending_registrations.get(token)
     if not entry or datetime.now() > entry["expires"]:
         pending_registrations.pop(token, None)
-        return html.TemplateResponse("register_confirm.html", {"request": request, "invalid": True})
-    pending_registrations.pop(token)
-    return html.TemplateResponse("register_confirm.html", {"request": request, "email": entry["email"]})
+        return html.TemplateResponse("signupDetails.html", {"request": request, "invalid": True})
+    return html.TemplateResponse("signupDetails.html", {"request": request, "email": entry["email"], "token": token})
+
+
+@app.post("/signup/complete", response_class=HTMLResponse)
+async def signup_complete(request: Request, token: str = Form(...), username: str = Form(...), password: str = Form(...)):
+    entry = pending_registrations.get(token)
+    if not entry or datetime.now() > entry["expires"]:
+        pending_registrations.pop(token, None)
+        return html.TemplateResponse("signupDetails.html", {"request": request, "invalid": True})
+    if not username or not password:
+        return html.TemplateResponse("signupDetails.html", {
+            "request": request, "email": entry["email"], "token": token,
+            "error": "ユーザー名とパスワードを入力してください",
+        })
+    res = requests.post(f"{API_URL}/register", json={"username": username, "password": password, "email": entry["email"]}, timeout=10)
+    if res.status_code != 200:
+        return html.TemplateResponse("signupDetails.html", {
+            "request": request, "email": entry["email"], "token": token,
+            "error": "登録に失敗しました。ユーザー名が既に使用されています。",
+        })
+    pending_registrations.pop(token, None)
+    return html.TemplateResponse("signupDetails.html", {"request": request, "done": True, "username": username})
 
 
 @app.post("/logout")
@@ -266,6 +293,19 @@ async def fantasy_page(request: Request):
         "title_name": "fantasy",
     }
     return html.TemplateResponse("fantasy.html", context)
+
+
+@app.get("/download/{item_id}")
+def download_original(item_id: int):
+    """オリジナルファイルをダウンロードする"""
+    res = requests.get(f"{API_URL}/getItem/{item_id}", timeout=10)
+    item = res.json()["item"]
+    file_path = BASE_DIR / item["contents_type"] / "originals" / item["stored_file_name"]
+    return FileResponse(
+        file_path,
+        filename=item["original_file_name"],
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(item['original_file_name'])}"},
+    )
 
 
 @app.get("/personal-web/contents/{contents_type}/img/{file_name}")

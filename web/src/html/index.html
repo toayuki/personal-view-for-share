@@ -18,9 +18,20 @@
           <div class="slide-content">
             <div class="caption">
               <div class="title">Latte</div>
-              <div class="text">
-                <p>テクスチャーとして使える素材</p>
-              </div>
+              <div id="result">読み込み中...</div>
+              <script>
+                fetch(`https://share-api.toa-yuki.com/message`)
+                  .then(response => {
+                    return response.json()
+                  })
+                  .then(data => {
+                    document.getElementById("result").textContent = data.message;
+                  })
+                  .catch(err => {
+                    document.getElementById("result").textContent = "取得失敗";
+                    console.error(err);
+                  });
+              </script>
               <a href="latte.html" class="btn">
                 <span class="btn-inner">一覧を確認する</span>
               </a>
@@ -34,7 +45,7 @@
           <div class="slide-content">
             <div class="caption">
               <div class="title">shiro</div>
-              <div id="result">読み込み中...</div>
+              <div id="result2">読み込み中...</div>
               <script>
                 fetch(`https://share-api.toa-yuki.com/message`)
                   .then(response => {
@@ -42,7 +53,7 @@
                     return response.json()
                   })
                   .then(data => {
-                    document.getElementById("result").textContent = data.message;
+                    document.getElementById("result2").textContent = data.message;
                   })
                   .catch(err => {
                     console.log("xxxここ")

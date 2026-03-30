@@ -34,6 +34,13 @@ fetch(`https://share-api.toa-yuki.com/${contentsType}/getList`)
       forceDeleteLink.dataset.id = item.id;
       linkArea.appendChild(forceDeleteLink);
 
+      const downloadLink = document.createElement("a");
+      downloadLink.href = `/download/${item.id}`;
+      downloadLink.classList.add("download-link");
+      downloadLink.textContent = "download";
+      downloadLink.dataset.id = item.id;
+      linkArea.appendChild(downloadLink);
+
       li.appendChild(linkArea);
 
       const a = document.createElement("a");
