@@ -158,32 +158,12 @@ body.sub_page {
 	position: relative;
 }
 
-body.sub_page#texture {
-	background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url("../texture/te_003.jpg");
-}
-
 body.sub_page#shiro {
-	background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url("../shiro/IMG_0936.DNG");
-}
-
-body.sub_page#drawing {
-	background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url("../drawing/dr_001.jpg");
-}
-
-body.sub_page#fantasy {
-	background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url("../fantasy/fa_001.jpg");
-}
-
-body.sub_page#utopia {
-	background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url("../utopia/ut_003.jpg");
+	background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url("../shiro/shiro-home.PNG");
 }
 
 body.sub_page#latte {
 	background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url("../latte/IMG_0507.jpg");
-}
-
-body.sub_page#read {
-	background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url("../shiro/ar_001.jpg");
 }
 
 
@@ -516,6 +496,7 @@ body.sub_page main p a {
 .options-area .delete-link {
 	display: none;
 	pointer-events: auto;
+	cursor: pointer;
 	font-size: 10px;
 	letter-spacing: 0.15em;
 	text-transform: uppercase;
@@ -543,6 +524,7 @@ body.sub_page main p a {
 .options-area .force-delete-link {
 	display: none;
 	pointer-events: auto;
+	cursor: pointer;
 	font-size: 10px;
 	letter-spacing: 0.15em;
 	text-transform: uppercase;
@@ -604,6 +586,7 @@ body.sub_page main p a {
 .options-area .edit-link {
 	display: none;
 	pointer-events: auto;
+	cursor: pointer;
 	font-size: 10px;
 	letter-spacing: 0.15em;
 	text-transform: uppercase;
@@ -669,6 +652,22 @@ body.sub_page main p a {
 	height: 100%;
 	transition: all 0.2s ease-in-out;
 	overflow: hidden;
+	position: relative;
+}
+
+.file-type-icon {
+	position: absolute;
+	bottom: 22px;
+	left: 4px;
+	font-size: 9px;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: rgba(255, 255, 255, 0.9);
+	background: rgba(0, 0, 0, 0.55);
+	padding: 2px 5px;
+	pointer-events: none;
+	z-index: 4;
+	line-height: 1.4;
 }
 
 .grid-item a img {

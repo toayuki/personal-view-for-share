@@ -124,15 +124,6 @@ if (selectAllBtn) {
 }
 
 document.addEventListener("click", async (e) => {
-  if (document.body.classList.contains("edit-mode")) {
-    const thumbnail = e.target.closest(".grid-item a[data-fancybox]");
-    if (thumbnail) {
-      e.preventDefault();
-      thumbnail.closest(".grid-item").classList.toggle("selected");
-      return;
-    }
-  }
-
   const deleteLink = e.target.closest(".delete-link");
   if (deleteLink) {
     e.preventDefault();
@@ -237,6 +228,17 @@ document.addEventListener("click", async (e) => {
         }
       },
     });
+  }
+
+  if (document.body.classList.contains("edit-mode")) {
+    const isOptionLink = e.target.closest(".delete-link, .force-delete-link, .edit-link, .download-link");
+    if (!isOptionLink) {
+      const thumbnail = e.target.closest(".grid-item a[data-fancybox]");
+      if (thumbnail) {
+        e.preventDefault();
+        thumbnail.closest(".grid-item").classList.toggle("selected");
+      }
+    }
   }
 })
 

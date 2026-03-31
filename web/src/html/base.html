@@ -4,7 +4,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>PERSONAL WEB</title>
+    <title>{% block title %}PERSONAL WEB{% endblock %}</title>
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="Description" content="ここにはページの説明文を入れてください" />
@@ -20,11 +20,12 @@
     {% endblock %}
 
     <link href="https://use.fontawesome.com/releases/v6.6.0/css/all.css" rel="stylesheet">
+    {% block page_style %}{% endblock %}
 </head>
 
 <body class="{{ body_class | default('') }}" id="{{ body_id | default('') }}">
 
-    <div id="loading">
+    <div id="loading" class="{% block loading_class %}{% endblock %}">
         <div class="loader">
             <div class="inner one"></div>
             <div class="inner two"></div>
@@ -32,6 +33,7 @@
         </div>
     </div>
 
+    {% block header %}
     <header>
         <h1>PERSONAL WEB</h1>
         <!-- <h2>個人用サイト</h2> -->
@@ -46,13 +48,14 @@
         <nav id="g_navi">
             <ul>
                 <li class="sml"><a href="/">HOME</a></li>
-                <li><a href="latte.html"><img src="/static/texture/te_003.jpg" />latte</a></li>
-                <li><a href="shiro.html"><img src="/static/shiro/dr_001.jpg" />shiro</a></li>
-                <li class="sml"><a href="read.html">Read Me</a></li>
+                <li><a href="latte.html"><img src="/static/latte/latte.jpg" />latte</a></li>
+                <li><a href="shiro.html"><img src="/static/shiro/shiro.jpg" />shiro</a></li>
+                <li class="sml"><a href="howToUse.html">How to use</a></li>
                 <li class="sml"><a href="#" id="logoutBtn">Logout</a></li>
             </ul>
         </nav>
     </header>
+    {% endblock %}
 
     <main class="{{ main_class | default('') }}">
     {% block content %}
@@ -67,11 +70,12 @@
     {% endblock %}
     </main>
 
+    {% block footer %}
     <footer>
         <ul class="f_link">
-            <li><a href="https://ameblo.jp/ponkinta/" target="_blank"><i class="fas fa-book"></i></a></li>
-            <li><a href="https://www.instagram.com/ai_mmng/" target="_blank"><i class="fab fa-instagram"></i></a></li>
-            <li><a href="https://www.megapx.com/contact.html" target="_blank"><i class="fa-regular fa-envelope"></i></a>
+            <li><a href="#" target="_blank"><i class="fas fa-book"></i></a></li>
+            <li><a href="#" target="_blank"><i class="fab fa-instagram"></i></a></li>
+            <li><a href="#" target="_blank"><i class="fa-regular fa-envelope"></i></a>
             </li>
         </ul>
 
@@ -79,6 +83,7 @@
             Copyright (C) Yuki. All Rights Reserved.
         </address>
     </footer>
+    {% endblock %}
 
     {% block script %}
     <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>

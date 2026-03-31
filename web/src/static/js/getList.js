@@ -52,7 +52,15 @@ fetch(`https://share-api.toa-yuki.com/${contentsType}/getList`)
       img.src = `https://${window.location.hostname}/personal-web/contents/${contentsType}/thumbnail/${item.thumbnail_file_name ?? item.file_name}`;
       a.appendChild(img);
 
+      const typeIcon = document.createElement("span");
+      typeIcon.className = "file-type-icon";
+      typeIcon.innerHTML = item.file_type === "video"
+        ? '<i class="fa-solid fa-film"></i> VIDEO'
+        : '<i class="fa-regular fa-image"></i> PHOTO';
+      a.appendChild(typeIcon);
+
       li.appendChild(a);
+      li.appendChild(linkArea);
 
       // 動画アイテムに変換中プログレスバーを追加（初期状態は converting クラスあり）
       if (item.file_type === "video" && item.stored_file_name) {

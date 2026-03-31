@@ -246,54 +246,13 @@ async def shiro_page(request: Request):
     }
     return html.TemplateResponse("base.html", context)
 
-
-@app.get("/texture.html", response_class=HTMLResponse)
-async def texture_page(request: Request):
-    """textureページを返す"""
+@app.get("/howToUse.html", response_class=HTMLResponse)
+async def how_to_use_page(request: Request):
+    """howToUseページを返す"""
     context = {
         "request": request,
-        "body_class": "sub_page",
-        "body_id": "texture",
-        "title_name": "texture",
     }
-    return html.TemplateResponse("texture.html", context)
-
-
-@app.get("/utopia.html", response_class=HTMLResponse)
-async def utopia_page(request: Request):
-    "utopiaページを返す"
-    context = {
-        "request": request,
-        "body_class": "sub_page",
-        "body_id": "utopia",
-        "title_name": "utopia",
-    }
-    return html.TemplateResponse("utopia.html", context)
-
-
-@app.get("/drawing.html", response_class=HTMLResponse)
-async def drawing_page(request: Request):
-    """drawingページを返す"""
-    context = {
-        "request": request,
-        "body_class": "sub_page",
-        "body_id": "drawing",
-        "title_name": "drawing",
-    }
-    return html.TemplateResponse("drawing.html", context)
-
-
-@app.get("/fantasy.html", response_class=HTMLResponse)
-async def fantasy_page(request: Request):
-    """fantasyページを返す"""
-    context = {
-        "request": request,
-        "body_class": "sub_page",
-        "body_id": "fantasy",
-        "title_name": "fantasy",
-    }
-    return html.TemplateResponse("fantasy.html", context)
-
+    return html.TemplateResponse("howToUse.html", context)
 
 @app.get("/download/{item_id}")
 def download_original(item_id: int):
