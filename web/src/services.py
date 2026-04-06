@@ -9,7 +9,7 @@ import re
 import string
 import subprocess
 import threading
-from PIL import Image
+from PIL import Image, ImageOps
 from typing import Callable, Literal
 
 import pillow_heif
@@ -46,24 +46,43 @@ def get_file_type(file_path: Path) -> Literal["image", "video", "other"]:
     return "other"
 
 
-def convert_to_jpg(file_bytes: bytes, ext: str) -> Image.Image:
-    """画像ファイルをjpgに変換する"""
-    if ext in [".heic"]:
+def save_image_as_webp(
+    file_bytes: bytes,
+    ext: str,
+    path: Path,
+    max_px: int | None = None,
+    max_kb: int | None = None,
+    quality: int = 85,
+    lossless: bool = False,
+) -> None:
+    """画像をWebPに変換して保存する。max_px/max_kbを指定すると解像度・容量を制限する。"""
+    if ext == ".heic":
         heif_file = pillow_heif.read_heif(file_bytes)
         image = Image.frombytes(heif_file.mode, heif_file.size, heif_file.data, "raw")
-        return image
-
-    if ext in [".dng"]:
+    elif ext == ".dng":
         with rawpy.imread(file_bytes) as raw:
             rgb = raw.postprocess()
             image = Image.fromarray(rgb)
-            return image
-
-    if ext in [".bmp", ".tiff"]:
+    else:
         image = Image.open(io.BytesIO(file_bytes))
-        return image.convert("RGB")
+    image = ImageOps.exif_transpose(image)
+    if image.mode not in ("RGB", "RGBA"):
+        image = image.convert("RGB")
+    if max_px:
+        image.thumbnail((max_px, max_px), Image.Resampling.LANCZOS)
+    if max_kb:
+        for q in range(quality, 9, -5):
+            buf = io.BytesIO()
+            image.save(buf, "WEBP", quality=q)
+            if buf.tell() <= max_kb * 1024:
+                path.write_bytes(buf.getvalue())
+                return
+        path.write_bytes(buf.getvalue())
+    elif lossless:
+        image.save(path, "WEBP", lossless=True)
+    else:
+        image.save(path, "WEBP", quality=quality)
 
-    return file_bytes
 
 def convert_mov_to_mp4(input_path:Path, output_path:Path):
     """movファイルをmp4に変換する"""

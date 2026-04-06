@@ -23,7 +23,9 @@
     {% block page_style %}{% endblock %}
 </head>
 
-<body class="{{ body_class | default('') }}" id="{{ body_id | default('') }}">
+<body class="{{ body_class | default('') }} {% if not (category_image and category_id) %}default-category-bg{% endif %}" id="{{ body_id | default('') }}"
+  {% if category_image and category_id %}style="background-image: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), url('/personal-web/categories/{{ category_id }}/img/{{ category_image }}')"{% endif %}>
+
 
     <div id="loading" class="{% block loading_class %}{% endblock %}">
         <div class="loader">
@@ -59,13 +61,13 @@
 
     <main class="{{ main_class | default('') }}">
     {% block content %}
-    <h3>{{ body_id }}</h3>
+    <h3>{{ category_name }}</h3>
     <label for="fileUpload" class="file-link">upload</label>
     <label id="optionsBtn" class="file-link">options</label>
     <label id="selectAllBtn" class="file-link">select all</label>
     <input type="file" id="fileUpload" name="file" multiple style="display:none;">
     <div class="wrapper">
-      <ul class="grid js-anim" id="result" data-contents-type="{{ body_id }}"></ul>
+      <ul class="grid js-anim" id="result" data-category-id="{{ category_id | default('') }}"></ul>
     </div>
     {% endblock %}
     </main>
@@ -89,7 +91,6 @@
     <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <script type="module" src="/static/js/script.js"></script>
-    <script src="/static/js/getList.js"></script>
     <script src="/static/js/lightbox.js"></script>
     {% endblock %}
 

@@ -17,6 +17,9 @@ BASE_DIR = os.getenv("CONTENTS_SAVE_DIR", "")
 def create_thumbnail(input_file_path: Path, output_file_path: Path) -> str:
     """サムネイルを作成する"""
     if get_file_type(input_file_path) == "video":
+        # ffmpegのWebP直接出力は環境によってピクセルフォーマットの問題で失敗するため、
+        # 一度JPEGで出力してからPILでWebPに変換する
+        tmp_path = output_file_path.with_suffix(".jpg")
         cmd = [
             "ffmpeg",
             "-i",
@@ -27,9 +30,12 @@ def create_thumbnail(input_file_path: Path, output_file_path: Path) -> str:
             "1",
             "-vf",
             "crop='min(iw,ih)':'min(iw,ih)',scale=300:300",
-            output_file_path,
+            tmp_path,
         ]
         subprocess.run(cmd, check=True)
+        img = Image.open(tmp_path)
+        img.save(output_file_path, format="WEBP", quality=85)
+        tmp_path.unlink()
     elif get_file_type(input_file_path) == "image":
         make_square_thumbnail_for_image(input_file_path, output_file_path, 300)
     else:
@@ -61,4 +67,4 @@ def make_square_thumbnail_for_image(input_path: Path, output_path: Path, size=30
     # リサイズ
     img_resized = img_cropped.resize((size, size), Image.Resampling.LANCZOS)
     # 保存
-    img_resized.save(output_path, format="JPEG")
+    img_resized.save(output_path, format="WEBP", quality=85)

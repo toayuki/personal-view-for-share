@@ -10,81 +10,61 @@
 <link href="https://use.fontawesome.com/releases/v6.6.0/css/all.css" rel="stylesheet">
 {% endblock %}
 
+{% macro add_category_slide(extra_class='') %}
+<div class="slide slide-add-category{{ ' ' + extra_class if extra_class }}">
+  <div class="slide-content">
+    <div class="caption">
+      <div class="title">Add Category</div>
+      <p class="text">新しいカテゴリを登録して<br>コンテンツを整理しましょう</p>
+      <button id="add-category-btn" class="btn">
+        <span class="btn-inner">カテゴリを追加する</span>
+      </button>
+    </div>
+  </div>
+  <div class="image-container default-category-bg"></div>
+</div>
+{% endmacro %}
+
 {% block content %}
   <section class="slideshow">
     <div class="slideshow-inner">
+      {% if categories %}
       <div class="slides">
-        <div class="slide is-active ">
+        {% for category in categories %}
+        <div class="slide{% if loop.first %} is-active{% endif %}">
           <div class="slide-content">
             <div class="caption">
-              <div class="title">Latte</div>
-              <div id="result">読み込み中...</div>
-              <script>
-                fetch(`https://share-api.toa-yuki.com/message`)
-                  .then(response => {
-                    return response.json()
-                  })
-                  .then(data => {
-                    document.getElementById("result").textContent = data.message;
-                  })
-                  .catch(err => {
-                    document.getElementById("result").textContent = "取得失敗";
-                    console.error(err);
-                  });
-              </script>
-              <a href="latte.html" class="btn">
+              <div class="title">{{ category.name }}</div>
+              {% if category.description %}
+              <p class="text">{{ category.description }}</p>
+              {% endif %}
+              <a href="{{ category.id }}.html" class="btn">
                 <span class="btn-inner">一覧を確認する</span>
               </a>
+              {% if is_admin %}
+              <button class="category-delete-btn" data-category-id="{{ category.id }}">
+                <i class="fa-solid fa-trash"></i> 削除
+              </button>
+              {% endif %}
             </div>
           </div>
-          <div class="image-container">
-            <img src="/static/latte/IMG_0507.jpg" class="image" />
+          <div class="image-container{% if not category.image_file_name %} default-category-bg{% endif %}">
+            {% if category.image_file_name %}
+            <img src="/personal-web/categories/{{ category.id }}/img/{{ category.image_file_name }}" class="image" />
+            {% endif %}
           </div>
         </div>
-        <div class="slide">
-          <div class="slide-content">
-            <div class="caption">
-              <div class="title">shiro</div>
-              <div id="result2">読み込み中...</div>
-              <script>
-                fetch(`https://share-api.toa-yuki.com/message`)
-                  .then(response => {
-                    console.log("xxx受け取った")
-                    return response.json()
-                  })
-                  .then(data => {
-                    document.getElementById("result2").textContent = data.message;
-                  })
-                  .catch(err => {
-                    console.log("xxxここ")
-                    document.getElementById("result").textContent = "取得失敗";
-                    console.error(err);
-                  });
-              </script>
-              <a href="shiro.html" class="btn">
-                <span class="btn-inner">一覧を確認する</span>
-              </a>
-            </div>
-          </div>
-          <div class="image-container">
-            <img src="/static/shiro/shiro-home.png" class="image" />
-          </div>
-        </div>
+        {% endfor %}
+        {{ add_category_slide() }}
+      </div>
       <div class="pagination">
-        <div class="item is-active">
-          <span class="icon">1</span>
+        {% for category in categories %}
+        <div class="item{% if loop.first %} is-active{% endif %}">
+          <span class="icon">{{ loop.index }}</span>
         </div>
+        {% endfor %}
         <div class="item">
-          <span class="icon">2</span>
-        </div>
-        <!-- <div class="item">
-          <span class="icon">3</span>
-        </div>
-        <div class="item">
-          <span class="icon">4</span>
-        </div>
-        <div class="item">
-          <span class="icon">5</span> -->
+          <span class="icon">{{ categories|length + 1 }}</span>
         </div>
       </div>
       <div class="arrows">
@@ -111,15 +91,39 @@
           </span>
         </div>
       </div>
+      {% else %}
+      {{ add_category_slide('is-active is-loaded') }}
+      {% endif %}
     </div>
   </section>
 {% endblock %}
 
 {% block script %}
 <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+{% if categories %}
 <script src='https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.1/TweenMax.min.js'></script>
-<script type="module" src="/static/js/script.js"></script>
 <script src="/static/js/slider.js"></script>
+{% endif %}
+<script type="module" src="/static/js/script.js"></script>
+<script type="module" src="/static/js/categoryModal.js"></script>
+<script type="module">
+  import { onOpenConfirm } from "/static/js/modal.js";
+  document.querySelectorAll(".category-delete-btn").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const categoryId = btn.dataset.categoryId;
+      await onOpenConfirm({
+        message: "このカテゴリを削除しますか？",
+        onOk: async () => {
+          const res = await fetch(`/categories/${categoryId}`, { method: "DELETE" });
+          if (res.ok) {
+            btn.closest(".slide").remove();
+          }
+        },
+      });
+    });
+  });
+</script>
 {% endblock %}
 </body>
 

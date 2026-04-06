@@ -1,5 +1,6 @@
 import { onOpenConfirm } from "./modal.js";
 import { onOpenEdit } from "./editModal.js";
+import { createGridItem, startConversionPolling, addConvertingOverlay } from "./getList.js";
 
 //Gメニュー
 var bnrBtn = $('#g_navi');
@@ -64,10 +65,15 @@ document.getElementById('fileUpload')?.addEventListener('change', async (e) => {
 
   spinner.classList.remove('loaded');
 
+  const categoryId = document.getElementById('result')?.dataset.categoryId ?? '';
+  const defer = files.length > 1;
+  const pendingVideoNames = [];
+
   for (const file of files) {
     await new Promise((resolve, reject) => {
       const formData = new FormData();
       formData.append('file', file);
+      if (defer) formData.append('defer_conversion', 'true');
 
       const xhr = new XMLHttpRequest();
 
@@ -79,7 +85,22 @@ document.getElementById('fileUpload')?.addEventListener('change', async (e) => {
       };
 
       xhr.onload = () => {
-        console.log(`アップロード成功: ${file.name}`);
+        try {
+          const data = JSON.parse(xhr.responseText);
+          if (data.content) {
+            const result = document.getElementById('result');
+            result?.appendChild(createGridItem(data.content));
+            if (data.content.file_type === 'video') {
+              const li = result?.lastElementChild;
+              if (li) addConvertingOverlay(li);
+              if (defer) {
+                pendingVideoNames.push(data.content.stored_file_name);
+              } else {
+                startConversionPolling();
+              }
+            }
+          }
+        } catch {}
         resolve();
       };
 
@@ -88,14 +109,21 @@ document.getElementById('fileUpload')?.addEventListener('change', async (e) => {
         reject();
       };
 
-      const contentsType = document.getElementById('result')?.dataset.contentsType ?? 'shiro';
-      xhr.open('POST', `/upload/${contentsType}`);
+      xhr.open('POST', `/upload/${categoryId}`);
       xhr.send(formData);
     }).catch(() => {});
   }
 
+  if (pendingVideoNames.length > 0) {
+    await fetch('/start-conversion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stored_file_names: pendingVideoNames }),
+    });
+    startConversionPolling();
+  }
+
   spinner.classList.add('loaded');
-  location.reload();
 });
 
 const optionsBtn = document.getElementById("optionsBtn");
