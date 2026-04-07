@@ -52,6 +52,18 @@ active_sessions: dict[str, dict] = {}
 
 _PUBLIC_PATHS = {"/login", "/signup", "/signup/details", "/signup/complete", "/favicon.ico"}
 
+
+def _check_category_access(request: Request, category_id: str) -> None:
+    """カテゴリへのアクセス権限を検証する。権限がなければ 403 を返す。"""
+    token = request.cookies.get("session")
+    session = active_sessions.get(token, {})
+    role = session.get("role", "user")
+    if role == "admin":
+        return
+    viewable = session.get("viewable_category_ids")
+    if viewable is None or category_id not in viewable:
+        raise HTTPException(status_code=403, detail="Access denied")
+
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
     """未認証リクエストを /login にリダイレクトする"""

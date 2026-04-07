@@ -41,7 +41,7 @@
               <a href="{{ category.id }}.html" class="btn">
                 <span class="btn-inner">一覧を確認する</span>
               </a>
-              {% if is_admin %}
+              {% if role == "admin" or category.created_by|string == user_id %}
               <button class="category-delete-btn" data-category-id="{{ category.id }}">
                 <i class="fa-solid fa-trash"></i> 削除
               </button>
@@ -50,7 +50,7 @@
           </div>
           <div class="image-container{% if not category.image_file_name %} default-category-bg{% endif %}">
             {% if category.image_file_name %}
-            <img src="/personal-web/categories/{{ category.id }}/img/{{ category.image_file_name }}" class="image" />
+            <img data-src="/personal-web/categories/{{ category.id }}/img/{{ category.image_file_name }}" class="image" />
             {% endif %}
           </div>
         </div>
@@ -106,6 +106,13 @@
 {% endif %}
 <script type="module" src="/static/js/script.js"></script>
 <script type="module" src="/static/js/categoryModal.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("img[data-src]").forEach(img => {
+      img.src = img.dataset.src;
+    });
+  });
+</script>
 <script type="module">
   import { onOpenConfirm } from "/static/js/modal.js";
   document.querySelectorAll(".category-delete-btn").forEach(btn => {

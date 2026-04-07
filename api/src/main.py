@@ -171,8 +171,8 @@ def create_category(data: dict = Body(...)):
     category_id = _generate_id()
     try:
         cur.execute(
-            "INSERT INTO categories (id, name, description, image_file_name) VALUES (?, ?, ?, ?)",
-            (category_id, name, description, image_file_name),
+            "INSERT INTO categories (id, name, description, image_file_name, created_by) VALUES (?, ?, ?, ?, ?)",
+            (category_id, name, description, image_file_name, data.get("user_id")),
         )
         # 作成者の viewable_category_ids に新カテゴリを追加
         user_id = data.get("user_id")
@@ -229,7 +229,7 @@ def get_category(category_id: str):
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
     cur.execute(
-        "SELECT id, name, description, image_file_name FROM categories WHERE id=? AND deleted_at IS NULL",
+        "SELECT id, name, description, image_file_name, created_by FROM categories WHERE id=? AND deleted_at IS NULL",
         (category_id,),
     )
     row = cur.fetchone()
@@ -243,7 +243,7 @@ def list_categories():
     conn = sqlite3.connect("main.db")
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
-    cur.execute("SELECT id, name, description, image_file_name FROM categories WHERE deleted_at IS NULL ORDER BY created_at")
+    cur.execute("SELECT id, name, description, image_file_name, created_by FROM categories WHERE deleted_at IS NULL ORDER BY created_at")
     rows = cur.fetchall()
     conn.close()
     return {"categories": [dict(row) for row in rows]}
@@ -270,6 +270,26 @@ def login_verify(data: dict = Body(...)):
     if row:
         return {"ok": True, "user_id": row["id"], "role": row["role"], "viewable_category_ids": row["viewable_category_ids"]}
     return JSONResponse(status_code=401, content={"error": "invalid credentials"})
+
+
+@app.post("/audit/log")
+def audit_log(data: dict = Body(...)):
+    """操作ログを記録する"""
+    conn = sqlite3.connect("main.db")
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO audit_logs (id, user_id, action, details, ip_address) VALUES (?, ?, ?, ?, ?)",
+        (
+            _generate_id(),
+            data.get("user_id"),
+            data.get("action", "unknown"),
+            json.dumps(data.get("details")) if data.get("details") is not None else None,
+            data.get("ip_address"),
+        ),
+    )
+    conn.commit()
+    conn.close()
+    return {"ok": True}
 
 
 @app.post("/register")

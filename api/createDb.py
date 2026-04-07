@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS categories (
     name VARCHAR NOT NULL,
     description TEXT,
     image_file_name TEXT,
+    created_by TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     deleted_at DATETIME
@@ -64,6 +65,17 @@ CREATE TABLE IF NOT EXISTS users (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     deleted_at DATETIME
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    action TEXT NOT NULL,
+    details TEXT,
+    ip_address TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )
 """)
 
