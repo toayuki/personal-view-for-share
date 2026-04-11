@@ -6,7 +6,6 @@ FastAPI を用いた Web フロントエンド用エントリーポイントモ�
 """
 
 import anyio
-from contextlib import asynccontextmanager
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from datetime import datetime
@@ -21,11 +20,11 @@ import requests
 import smtplib
 from dotenv import load_dotenv  # type: ignore
 from fastapi import Body, FastAPI, File, Form, HTTPException, Query, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from src import create_thumbnail
+from src import audit_logger, create_thumbnail
 from src.services import convert_to_hls, save_image_as_webp, create_random_file_name, get_file_type
 
 load_dotenv()
@@ -39,6 +38,7 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER", "")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 
+
 # 一時登録トークン {token: {"email": str, "expires": datetime}}
 pending_registrations: dict[str, dict] = {}
 
@@ -51,6 +51,22 @@ is_debug_mode = True
 active_sessions: dict[str, dict] = {}
 
 _PUBLIC_PATHS = {"/login", "/signup", "/signup/details", "/signup/complete", "/favicon.ico"}
+
+
+def _get_user_categories(session: dict) -> list:
+    """セッションのユーザー権限に応じたカテゴリ一覧を返す"""
+    role = session.get("role", "user")
+    viewable_category_ids = session.get("viewable_category_ids")
+    try:
+        api_res = requests.get(f"{API_URL}/categories", timeout=10)
+        all_categories = api_res.json().get("categories", []) if api_res.status_code == 200 else []
+    except Exception:
+        return []
+    if role == "admin":
+        return all_categories
+    if viewable_category_ids is not None:
+        return [c for c in all_categories if c["id"] in viewable_category_ids]
+    return []
 
 
 def _check_category_access(request: Request, category_id: str) -> None:
@@ -69,18 +85,25 @@ async def auth_middleware(request: Request, call_next):
     """未認証リクエストを /login にリダイレクトする"""
     path = request.url.path
     if path in _PUBLIC_PATHS or path.startswith("/static"):
-        response =  await call_next(request)
+        response = await call_next(request)
     else:
         token = request.cookies.get("session")
         if token and token in active_sessions:
-            response =  await call_next(request)
+            response = await call_next(request)
         else:
-            return RedirectResponse(url="/login", status_code=302)
+            accept = request.headers.get("accept", "")
+            if "text/html" in accept:
+                return RedirectResponse(url="/login", status_code=302)
+            return Response(status_code=401)
     if is_debug_mode:
         response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
     return response
+
+
+app.middleware("http")(audit_logger.make_audit_middleware(active_sessions, API_URL))
+
 
 # HLS変換状態を管理するメモリストア
 # {stored_file_name: {"status": "converting"|"done"|"error", "progress": 0-100}}
@@ -125,6 +148,14 @@ async def login_post(
     username: str = Form(...),
     password: str = Form(...),
 ):
+    ip = audit_logger.get_client_ip(request)
+    common = dict(
+        ip=ip,
+        username=username,
+        user_agent=request.headers.get("user-agent", "-"),
+        referer=request.headers.get("referer", "-"),
+        accept_language=request.headers.get("accept-language", "-"),
+    )
     res = requests.post(f"{API_URL}/login/verify", json={"username": username, "password": password}, timeout=10)
     if res.status_code == 200:
         data = res.json()
@@ -137,9 +168,11 @@ async def login_post(
             "role": data.get("role", "user"),
             "viewable_category_ids": viewable,
         }
+        audit_logger.log_login_access(event="attempt_success", **common)
         response = RedirectResponse(url="/", status_code=302)
         response.set_cookie("session", token, httponly=True, samesite="lax")
         return response
+    audit_logger.log_login_access(event="attempt_failed", **common)
     return html.TemplateResponse("login.html", {"request": request, "error": True})
 
 
@@ -152,6 +185,14 @@ async def signup_page(request: Request):
 async def signup_post(request: Request):
     data = await request.json()
     email = data.get("email", "").strip()
+    ip = audit_logger.get_client_ip(request)
+    common = dict(
+        ip=ip,
+        email=email,
+        user_agent=request.headers.get("user-agent", "-"),
+        referer=request.headers.get("referer", "-"),
+        accept_language=request.headers.get("accept-language", "-"),
+    )
     if not email:
         return Response(status_code=400, content='{"error":"email is required"}', media_type="application/json")
     token = secrets.token_urlsafe(32)
@@ -174,10 +215,12 @@ async def signup_post(request: Request):
             server.starttls()
             server.login(SMTP_USER, SMTP_PASSWORD)
             server.send_message(msg)
+        audit_logger.log_login_access(event="signup_request", **common)
         return Response(content='{"ok":true}', media_type="application/json")
     except Exception as e:
         pending_registrations.pop(token, None)
         print(f"メール送信エラー: {e}")
+        audit_logger.log_login_access(event="signup_request_failed", **common)
         return Response(status_code=500, content='{"error":"failed to send email"}', media_type="application/json")
 
 
@@ -192,9 +235,18 @@ async def signup_details(request: Request, token: str = ""):
 
 @app.post("/signup/complete", response_class=HTMLResponse)
 async def signup_complete(request: Request, token: str = Form(...), username: str = Form(...), password: str = Form(...)):
+    ip = audit_logger.get_client_ip(request)
+    common = dict(
+        ip=ip,
+        username=username,
+        user_agent=request.headers.get("user-agent", "-"),
+        referer=request.headers.get("referer", "-"),
+        accept_language=request.headers.get("accept-language", "-"),
+    )
     entry = pending_registrations.get(token)
     if not entry or datetime.now() > entry["expires"]:
         pending_registrations.pop(token, None)
+        audit_logger.log_login_access(event="signup_invalid_token", **common)
         return html.TemplateResponse("signupDetails.html", {"request": request, "invalid": True})
     if not username or not password:
         return html.TemplateResponse("signupDetails.html", {
@@ -203,11 +255,13 @@ async def signup_complete(request: Request, token: str = Form(...), username: st
         })
     res = requests.post(f"{API_URL}/register", json={"username": username, "password": password, "email": entry["email"]}, timeout=10)
     if res.status_code != 200:
+        audit_logger.log_login_access(event="signup_failed", email=entry["email"], **common)
         return html.TemplateResponse("signupDetails.html", {
             "request": request, "email": entry["email"], "token": token,
             "error": "登録に失敗しました。ユーザー名が既に使用されています。",
         })
     pending_registrations.pop(token, None)
+    audit_logger.log_login_access(event="signup_complete", email=entry["email"], **common)
     return html.TemplateResponse("signupDetails.html", {"request": request, "done": True, "username": username})
 
 
@@ -231,19 +285,9 @@ async def read_root(request: Request):
     token = request.cookies.get("session")
     session_user = active_sessions.get(token, {})
     role = session_user.get("role", "user")
-    viewable_category_ids = session_user.get("viewable_category_ids")
-
-    api_res = requests.get(f"{API_URL}/categories", timeout=10)
-    all_categories = api_res.json().get("categories", []) if api_res.status_code == 200 else []
-
-    if role == "admin":
-        categories = all_categories
-    elif viewable_category_ids is not None:
-        categories = [c for c in all_categories if c["id"] in viewable_category_ids]
-    else:
-        categories = []
-
-    context = {"request": request, "main_class": "main-content", "categories": categories, "is_admin": role == "admin"}
+    categories = _get_user_categories(session_user)
+    user_id = str(session_user.get("user_id", ""))
+    context = {"request": request, "main_class": "main-content", "categories": categories, "role": role, "user_id": user_id}
     return html.TemplateResponse("index.html", context)
 
 @app.get("/confirmModal.html", response_class=HTMLResponse)
@@ -321,17 +365,52 @@ async def create_category(
 
 
 @app.delete("/categories/{category_id}")
-def delete_category(category_id: str):
-    """カテゴリを削除する"""
+def delete_category(request: Request, category_id: str):
+    """カテゴリを削除する（admin または作成者のみ）"""
+    token = request.cookies.get("session")
+    session = active_sessions.get(token, {})
+    role = session.get("role", "user")
+    user_id = session.get("user_id")
+
+    cat_res = requests.get(f"{API_URL}/categories/{category_id}", timeout=10)
+    if cat_res.status_code != 200:
+        return Response(content=cat_res.text, status_code=cat_res.status_code, media_type="application/json")
+    category = cat_res.json().get("category")
+    if not category:
+        return Response(content='{"error":"not found"}', status_code=404, media_type="application/json")
+
+    if role != "admin" and str(user_id) != str(category.get("created_by")):
+        return Response(content='{"error":"forbidden"}', status_code=403, media_type="application/json")
+
     res = requests.delete(f"{API_URL}/categories/{category_id}", timeout=10)
     return Response(content=res.text, status_code=res.status_code, media_type="application/json")
 
 
+@app.get("/logs", response_class=HTMLResponse)
+async def logs_page(request: Request):
+    """ログ閲覧ページ（admin 限定）"""
+    token = request.cookies.get("session")
+    if active_sessions.get(token, {}).get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    log_files = (
+        sorted(
+            [f.name for f in audit_logger.LOG_DIR.iterdir() if f.suffix == ".log"],
+            key=lambda x: (x != "login_access.log", x),
+        )
+        if audit_logger.LOG_DIR.exists()
+        else []
+    )
+    return html.TemplateResponse("logs.html", {"request": request, "log_files": log_files})
+
 @app.get("/howToUse.html", response_class=HTMLResponse)
 async def how_to_use_page(request: Request):
     """howToUseページを返す"""
+    token = request.cookies.get("session")
+    session_user = active_sessions.get(token, {})
     context = {
         "request": request,
+        "role": session_user.get("role", "user"),
+        "categories": _get_user_categories(session_user),
     }
     return html.TemplateResponse("howToUse.html", context)
 
@@ -339,6 +418,7 @@ async def how_to_use_page(request: Request):
 @app.get("/{category_id}.html", response_class=HTMLResponse)
 async def category_page(request: Request, category_id: str):
     """カテゴリページを動的に返す（全固定ルートより後に定義）"""
+    _check_category_access(request, category_id)
     category_name = None
     category_image = None
     try:
@@ -351,21 +431,27 @@ async def category_page(request: Request, category_id: str):
     except Exception:
         pass
 
+    token = request.cookies.get("session")
+    session_user = active_sessions.get(token, {})
+    role = session_user.get("role", "user")
     context = {
         "request": request,
         "body_class": "sub_page",
         "category_name": category_name,
         "title_name": f"PERSONAL - {category_name}",
         "category_image": category_image,
+        "categories": _get_user_categories(session_user),
         "category_id": category_id,
+        "role": role,
     }
     return html.TemplateResponse("base.html", context)
 
 @app.get("/download/{content_id}")
-def download_original(content_id: str):
+def download_original(request: Request, content_id: str):
     """オリジナルファイルをダウンロードする"""
     res = requests.get(f"{API_URL}/getContent/{content_id}", timeout=10)
     content = res.json()["content"]
+    _check_category_access(request, content["category_id"])
     file_path = BASE_DIR / content["category_id"] / "originals" / content["stored_file_name"]
     return FileResponse(
         file_path,
@@ -375,15 +461,17 @@ def download_original(content_id: str):
 
 
 @app.get("/personal-web/contents/{category_id}/img/{file_name}")
-def get_img_file(category_id: str, file_name: str):
+def get_img_file(request: Request, category_id: str, file_name: str):
     """imgファイルを返す"""
+    _check_category_access(request, category_id)
     file_path = BASE_DIR / category_id / "images" / file_name
     return FileResponse(file_path)
 
 
 @app.get("/personal-web/contents/{category_id}/video/{file_path:path}")
-def get_video_file(category_id: str, file_path: str):
+def get_video_file(request: Request, category_id: str, file_path: str):
     """videoファイルを返す（HLS対応）"""
+    _check_category_access(request, category_id)
     full_path = BASE_DIR / category_id / "videos" / file_path
     ext = Path(file_path).suffix.lower()
     if ext == ".m3u8":
@@ -394,8 +482,9 @@ def get_video_file(category_id: str, file_path: str):
 
 
 @app.get("/personal-web/contents/{category_id}/thumbnail/{file_name}")
-def get_thumbnail_file(category_id: str, file_name: str):
+def get_thumbnail_file(request: Request, category_id: str, file_name: str):
     """thumbnailファイルを返す"""
+    _check_category_access(request, category_id)
     file_path = BASE_DIR / category_id / "thumbnails" / file_name
     return FileResponse(file_path)
 

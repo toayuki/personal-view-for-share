@@ -50,8 +50,9 @@
         <nav id="g_navi">
             <ul>
                 <li class="sml"><a href="/">HOME</a></li>
-                <li><a href="latte.html"><img src="/static/latte/latte.jpg" />latte</a></li>
-                <li><a href="shiro.html"><img src="/static/shiro/shiro.jpg" />shiro</a></li>
+                {% for category in categories | default([]) %}
+                <li class="sml"><a href="{{ category.id }}.html">{% if category.image_file_name %}<img src="/personal-web/categories/{{ category.id }}/img/{{ category.image_file_name }}" />{% endif %}{{ category.name }}</a></li>
+                {% endfor %}
                 <li class="sml"><a href="howToUse.html">How to use</a></li>
                 {% if role == "admin" %}<li class="sml"><a href="/logs">Logs</a></li>{% endif %}
                 <li class="sml"><a href="#" id="logoutBtn">Logout</a></li>

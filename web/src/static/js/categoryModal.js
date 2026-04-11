@@ -1,3 +1,5 @@
+import { openNotification } from "/static/js/modal.js";
+
 let categoryModalEl = null;
 
 async function loadCategoryModal() {
@@ -94,44 +96,25 @@ function addCategorySlide(id, name, description, imageFileName) {
     return;
   }
 
-  // スライド生成
-  const slide = document.createElement("div");
-  slide.className = "slide is-loaded";
-
-  const slideContent = document.createElement("div");
-  slideContent.className = "slide-content";
-  const caption = document.createElement("div");
-  caption.className = "caption";
-  const titleEl = document.createElement("div");
-  titleEl.className = "title";
-  titleEl.textContent = name;
-  caption.appendChild(titleEl);
+  // テンプレートをクローンしてデータを流し込む
+  const tpl = document.getElementById("category-slide-tpl");
+  const slide = tpl.content.cloneNode(true).querySelector(".slide");
+  slide.querySelector(".title").textContent = name;
+  const descEl = slide.querySelector(".text");
   if (description) {
-    const p = document.createElement("p");
-    p.className = "text";
-    p.textContent = description;
-    caption.appendChild(p);
+    descEl.textContent = description;
+    descEl.style.display = "";
   }
-  const a = document.createElement("a");
-  a.href = `${id}.html`;
-  a.className = "btn";
-  const btnInner = document.createElement("span");
-  btnInner.className = "btn-inner";
-  btnInner.textContent = "一覧を確認する";
-  a.appendChild(btnInner);
-  caption.appendChild(a);
-  slideContent.appendChild(caption);
-  slide.appendChild(slideContent);
-
-  const imageContainer = document.createElement("div");
-  imageContainer.className = "image-container" + (imageFileName ? "" : " default-category-bg");
+  slide.querySelector(".btn").href = `${id}.html`;
+  const deleteBtn = slide.querySelector(".category-delete-btn");
+  deleteBtn.dataset.categoryId = id;
+  const imageContainer = slide.querySelector(".image-container");
   if (imageFileName) {
-    const img = document.createElement("img");
+    const img = slide.querySelector(".image");
     img.src = `/personal-web/categories/${id}/img/${imageFileName}`;
-    img.className = "image";
-    imageContainer.appendChild(img);
+    img.style.display = "";
+    imageContainer.classList.remove("default-category-bg");
   }
-  slide.appendChild(imageContainer);
 
   // add-category スライドの直前に挿入
   const addSlide = slidesEl.querySelector(".slide-add-category");
@@ -163,24 +146,7 @@ function addCategorySlide(id, name, description, imageFileName) {
 }
 
 function openAddContentPrompt() {
-  const existing = document.getElementById("add-content-prompt");
-  if (existing) existing.remove();
-
-  const overlay = document.createElement("div");
-  overlay.id = "add-content-prompt";
-  overlay.className = "overlay modal-open";
-  overlay.innerHTML = `
-    <div class="modal">
-      <div class="modal-icon"><i class="fa-solid fa-circle-check"></i></div>
-      <h2>追加しました。</h2>
-      <p>コンテンツを追加しましょう！</p>
-      <div class="actions">
-        <button id="add-content-prompt-cancel" class="btn cancel">閉じる</button>
-      </div>
-    </div>
-  `;
-  overlay.querySelector("#add-content-prompt-cancel").addEventListener("click", () => overlay.remove());
-  document.body.appendChild(overlay);
+  openNotification({ message: "追加しました。", detail: "コンテンツを追加しましょう！" });
 }
 
 document.addEventListener("DOMContentLoaded", () => {

@@ -7,9 +7,21 @@ db_file = "main.db"
 conn = sqlite3.connect(db_file)
 cursor = conn.cursor()
 
-# テーブル作成（存在しなければ）
+# 外部キー制約を有効化
+cursor.execute("PRAGMA foreign_keys = OFF")
+
+# 全テーブル削除
+cursor.execute("DROP TABLE IF EXISTS contents_categories")
+cursor.execute("DROP TABLE IF EXISTS contents")
+cursor.execute("DROP TABLE IF EXISTS categories")
+cursor.execute("DROP TABLE IF EXISTS users")
+cursor.execute("DROP TABLE IF EXISTS audit_logs")
+
+cursor.execute("PRAGMA foreign_keys = ON")
+
+# テーブル作成
 cursor.execute("""
-CREATE TABLE IF NOT EXISTS contents (
+CREATE TABLE contents (
     id TEXT PRIMARY KEY,
     title TEXT,
     file_name TEXT,
@@ -25,7 +37,7 @@ CREATE TABLE IF NOT EXISTS contents (
 """)
 
 cursor.execute("""
-CREATE TABLE IF NOT EXISTS categories (
+CREATE TABLE categories (
     id TEXT PRIMARY KEY,
     name VARCHAR NOT NULL,
     description TEXT,
@@ -38,7 +50,7 @@ CREATE TABLE IF NOT EXISTS categories (
 """)
 
 cursor.execute("""
-CREATE TABLE IF NOT EXISTS contents_categories (
+CREATE TABLE contents_categories (
     content_id TEXT NOT NULL,
     category_id TEXT NOT NULL,
     sort_order INTEGER NOT NULL,
@@ -50,7 +62,7 @@ CREATE TABLE IF NOT EXISTS contents_categories (
 """)
 
 cursor.execute("""
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE users (
     id TEXT PRIMARY KEY,
     email_address TEXT UNIQUE NOT NULL, 
     password_hash TEXT NOT NULL,
@@ -69,7 +81,7 @@ CREATE TABLE IF NOT EXISTS users (
 """)
 
 cursor.execute("""
-CREATE TABLE IF NOT EXISTS audit_logs (
+CREATE TABLE audit_logs (
     id TEXT PRIMARY KEY,
     user_id TEXT,
     action TEXT NOT NULL,

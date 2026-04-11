@@ -10,6 +10,24 @@
 <link href="https://use.fontawesome.com/releases/v6.6.0/css/all.css" rel="stylesheet">
 {% endblock %}
 
+{% macro category_slide(name='', description='', href='', category_id='', image_file_name=None, extra_class='', show_delete=False) %}
+<div class="slide{{ (' ' + extra_class) if extra_class }}">
+  <div class="slide-content">
+    <div class="caption">
+      <div class="title">{{ name }}</div>
+      <p class="text"{{ ' style="display:none;"' if not description }}>{{ description }}</p>
+      <a href="{{ href }}" class="btn"><span class="btn-inner">一覧を確認する</span></a>
+      <button class="category-delete-btn" data-category-id="{{ category_id }}"{{ ' style="display:none;"' if not show_delete }}>
+        <i class="fa-solid fa-trash"></i> 削除
+      </button>
+    </div>
+  </div>
+  <div class="image-container{{ '' if image_file_name else ' default-category-bg' }}">
+    <img class="image" src="{{ '/personal-web/categories/' + category_id + '/img/' + image_file_name if image_file_name else '' }}"{{ ' style="display:none;"' if not image_file_name }}>
+  </div>
+</div>
+{% endmacro %}
+
 {% macro add_category_slide(extra_class='') %}
 <div class="slide slide-add-category{{ ' ' + extra_class if extra_class }}">
   <div class="slide-content">
@@ -26,34 +44,24 @@
 {% endmacro %}
 
 {% block content %}
+  <template id="category-slide-tpl">
+    {{ category_slide(extra_class='is-loaded', show_delete=True) }}
+  </template>
+
   <section class="slideshow">
     <div class="slideshow-inner">
       {% if categories %}
       <div class="slides">
         {% for category in categories %}
-        <div class="slide{% if loop.first %} is-active{% endif %}">
-          <div class="slide-content">
-            <div class="caption">
-              <div class="title">{{ category.name }}</div>
-              {% if category.description %}
-              <p class="text">{{ category.description }}</p>
-              {% endif %}
-              <a href="{{ category.id }}.html" class="btn">
-                <span class="btn-inner">一覧を確認する</span>
-              </a>
-              {% if role == "admin" or category.created_by|string == user_id %}
-              <button class="category-delete-btn" data-category-id="{{ category.id }}">
-                <i class="fa-solid fa-trash"></i> 削除
-              </button>
-              {% endif %}
-            </div>
-          </div>
-          <div class="image-container{% if not category.image_file_name %} default-category-bg{% endif %}">
-            {% if category.image_file_name %}
-            <img data-src="/personal-web/categories/{{ category.id }}/img/{{ category.image_file_name }}" class="image" />
-            {% endif %}
-          </div>
-        </div>
+        {{ category_slide(
+          name=category.name,
+          description=category.description or '',
+          href=category.id ~ '.html',
+          category_id=category.id,
+          image_file_name=category.image_file_name,
+          extra_class='is-active' if loop.first else '',
+          show_delete=(role == "admin" or category.created_by|string == user_id)
+        ) }}
         {% endfor %}
         {{ add_category_slide() }}
       </div>
@@ -100,34 +108,45 @@
 
 {% block script %}
 <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+<!-- particle effect: uncomment to enable -->
+<!-- <script src="/static/js/particleEffect.js"></script> -->
 {% if categories %}
 <script src='https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.1/TweenMax.min.js'></script>
 <script src="/static/js/slider.js"></script>
 {% endif %}
 <script type="module" src="/static/js/script.js"></script>
 <script type="module" src="/static/js/categoryModal.js"></script>
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll("img[data-src]").forEach(img => {
-      img.src = img.dataset.src;
-    });
-  });
-</script>
 <script type="module">
-  import { onOpenConfirm } from "/static/js/modal.js";
-  document.querySelectorAll(".category-delete-btn").forEach(btn => {
-    btn.addEventListener("click", async (e) => {
-      e.stopPropagation();
-      const categoryId = btn.dataset.categoryId;
-      await onOpenConfirm({
-        message: "このカテゴリを削除しますか？",
-        onOk: async () => {
-          const res = await fetch(`/categories/${categoryId}`, { method: "DELETE" });
-          if (res.ok) {
-            btn.closest(".slide").remove();
-          }
-        },
-      });
+  import { onOpenConfirm, openNotification } from "/static/js/modal.js";
+
+  // slider.js のアニメーション完了（data('wait') が false になる）を待つ
+  function waitForSlideshow(el) {
+    return new Promise(resolve => {
+      if (!el.data('wait')) { resolve(); return; }
+      const id = setInterval(() => { if (!el.data('wait')) { clearInterval(id); resolve(); } }, 50);
+    });
+  }
+  document.addEventListener("click", async (e) => {
+    const btn = e.target.closest(".category-delete-btn");
+    if (!btn) return;
+    e.stopPropagation();
+    const categoryId = btn.dataset.categoryId;
+    await onOpenConfirm({
+      message: "このカテゴリを削除しますか？",
+      onOk: async () => {
+        const slide = btn.closest(".slide");
+        const slideIndex = [...document.querySelectorAll('.slides .slide')].indexOf(slide);
+        const res = await fetch(`/categories/${categoryId}`, { method: "DELETE" });
+        if (!res.ok) return;
+        openNotification({ message: "削除しました。" });
+        document.querySelector(`#g_navi a[href="${categoryId}.html"]`)?.closest('li')?.remove();
+        // 次スライドへの遷移アニメーションを開始
+        document.querySelector('.arrow.next').click();
+        // アニメーション完了を検知してから要素を削除（アニメーション中に消すと表示が壊れる）
+        await waitForSlideshow($('.slideshow'));
+        slide.remove();
+        document.querySelectorAll('.pagination .item')[slideIndex]?.remove();
+      },
     });
   });
 </script>

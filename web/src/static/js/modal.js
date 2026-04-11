@@ -1,5 +1,22 @@
 // /common/modal.js
 
+export function openNotification({ message, detail = "" }) {
+  const overlay = document.createElement("div");
+  overlay.className = "overlay modal-open";
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-icon"><i class="fa-solid fa-circle-check"></i></div>
+      <h2>${message}</h2>
+      ${detail ? `<p>${detail}</p>` : ""}
+      <div class="actions">
+        <button class="btn cancel">閉じる</button>
+      </div>
+    </div>
+  `;
+  overlay.querySelector("button").addEventListener("click", () => overlay.remove());
+  document.body.appendChild(overlay);
+}
+
 let initialized = false;
 
 export async function onOpenConfirm({ message, onOk, }) {

@@ -17,3 +17,9 @@ sqlite
 データアクセス
 apiディレクトリで以下を実行
 sqlite3 main.db
+
+スリープにしないよう以下を実行
+caffeinate -i
+
+cloudflare tunnel起動コマンド
+cloudflared tunnel --config ~/.cloudflared/config.yml run my-tunnel
