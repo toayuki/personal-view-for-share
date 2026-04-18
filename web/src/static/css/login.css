@@ -1,0 +1,168 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root, [data-theme="dark"] {
+  --login-bg:                radial-gradient(circle farthest-corner at center, #223538 0%, #000305 100%);
+  --login-color:             #ccc;
+  --login-title:             #eee;
+  --login-label:             #67ABCD;
+  --login-input-color:       #eee;
+  --login-input-border:      rgba(103, 171, 205, 0.3);
+  --login-input-focus:       #67ABCD;
+  --login-placeholder:       rgba(255, 255, 255, 0.25);
+  --login-autofill-bg:       #1a2a30;
+  --login-autofill-color:    #eee;
+  --login-btn-color:         #555;
+  --login-btn-border:        rgba(103, 171, 205, 0.4);
+  --login-btn-hover-bg:      rgba(103, 171, 205, 0.08);
+  --login-btn-hover-border:  #67ABCD;
+  --login-divider:           rgba(103, 171, 205, 0.25);
+  --login-sublink:           #555;
+  --login-sublink-hover:     #67ABCD;
+  --login-error:             #cd6767;
+}
+
+[data-theme="light"] {
+  --login-bg:                linear-gradient(135deg, #e8f4f8 0%, #f0f8ff 50%, #ffffff 100%);
+  --login-color:             #334;
+  --login-title:             #334;
+  --login-label:             #334;
+  --login-input-color:       #334;
+  --login-input-border:      rgba(41, 128, 185, 0.4);
+  --login-input-focus:       #2980b9;
+  --login-placeholder:       rgba(51, 51, 68, 0.35);
+  --login-autofill-bg:       #eef6fb;
+  --login-autofill-color:    #334;
+  --login-btn-color:         #555;
+  --login-btn-border:        rgba(41, 128, 185, 0.4);
+  --login-btn-hover-bg:      rgba(41, 128, 185, 0.08);
+  --login-btn-hover-border:  #2980b9;
+  --login-divider:           rgba(41, 128, 185, 0.25);
+  --login-sublink:           #999;
+  --login-sublink-hover:     #2980b9;
+  --login-error:             #cd6767;
+}
+
+body {
+  font-family: "Open Sans", sans-serif;
+  letter-spacing: 0.05em;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: var(--login-bg);
+  color: var(--login-color);
+}
+
+.login-box {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 36px;
+}
+
+.login-title {
+  font-family: "Oswald", sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--login-title);
+}
+
+form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+label {
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--login-label);
+}
+
+input[type="text"],
+input[type="password"] {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--login-input-border);
+  color: var(--login-input-color);
+  font-family: "Open Sans", sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  padding: 6px 0;
+  outline: none;
+  transition: border-color 0.3s;
+  width: 100%;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus {
+  border-bottom-color: var(--login-input-focus);
+}
+
+input[type="text"]::placeholder,
+input[type="password"]::placeholder {
+  color: var(--login-placeholder);
+}
+
+input[type="text"]:-webkit-autofill,
+input[type="password"]:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 100px var(--login-autofill-bg) inset;
+  -webkit-text-fill-color: var(--login-autofill-color);
+}
+
+.error-msg {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--login-error);
+  text-align: center;
+}
+
+button[type="submit"] {
+  margin-top: 8px;
+  background: transparent;
+  border: 1px solid var(--login-btn-border);
+  color: var(--login-btn-color);
+  font-family: "Open Sans", sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  padding: 12px;
+  cursor: pointer;
+  transition: background 0.3s, border-color 0.3s;
+  width: 100%;
+}
+
+button[type="submit"]:hover {
+  background: var(--login-btn-hover-bg);
+  border-color: var(--login-btn-hover-border);
+}
+
+.divider {
+  width: 40px;
+  height: 1px;
+  background: var(--login-divider);
+}
+
+.sub-link {
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--login-sublink);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.sub-link:hover {
+  color: var(--login-sublink-hover);
+}

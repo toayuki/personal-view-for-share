@@ -290,23 +290,6 @@ async def read_root(request: Request):
     context = {"request": request, "main_class": "main-content", "categories": categories, "role": role, "user_id": user_id}
     return html.TemplateResponse("index.html", context)
 
-@app.get("/confirmModal.html", response_class=HTMLResponse)
-async def confirm_modal(request: Request):
-    """confirmモーダルを返す"""
-    return html.TemplateResponse("confirmModal.html", {"request": request})
-
-
-@app.get("/editModal.html", response_class=HTMLResponse)
-async def edit_modal(request: Request):
-    """editモーダルを返す"""
-    return html.TemplateResponse("editModal.html", {"request": request})
-
-
-@app.get("/categoryModal.html", response_class=HTMLResponse)
-async def category_modal(request: Request):
-    """カテゴリ追加モーダルを返す"""
-    return html.TemplateResponse("categoryModal.html", {"request": request})
-
 
 @app.get("/personal-web/categories/{category_id}/img/{file_name}")
 def get_category_img(category_id: str, file_name: str):

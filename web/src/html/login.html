@@ -5,123 +5,15 @@
   <title>PERSONAL WEB - Login</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans%3A400%2C400italic%2C600%2C700%7COswald%3A400%2C300">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: "Open Sans", sans-serif;
-      letter-spacing: 0.05em;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-image: radial-gradient(circle farthest-corner at center, #223538 0%, #000305 100%);
-      color: #ccc;
-    }
-
-    .login-box {
-      width: 320px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 36px;
-    }
-
-    .login-title {
-      font-family: "Oswald", sans-serif;
-      font-size: 13px;
-      letter-spacing: 0.4em;
-      text-transform: uppercase;
-      color: #eee;
-    }
-
-    form {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    label {
-      font-size: 9px;
-      letter-spacing: 0.3em;
-      text-transform: uppercase;
-      color: #67ABCD;
-    }
-
-    input[type="text"],
-    input[type="password"] {
-      background: transparent;
-      border: none;
-      border-bottom: 1px solid rgba(103, 171, 205, 0.3);
-      color: #eee;
-      font-family: "Open Sans", sans-serif;
-      font-size: 13px;
-      letter-spacing: 0.1em;
-      padding: 6px 0;
-      outline: none;
-      transition: border-color 0.3s;
-      width: 100%;
-    }
-
-    input[type="text"]:focus,
-    input[type="password"]:focus {
-      border-bottom-color: #67ABCD;
-    }
-
-    .error-msg {
-      font-size: 9px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: #cd6767;
-      text-align: center;
-    }
-
-    button[type="submit"] {
-      margin-top: 8px;
-      background: transparent;
-      border: 1px solid rgba(103, 171, 205, 0.4);
-      color: #67ABCD;
-      font-family: "Open Sans", sans-serif;
-      font-size: 10px;
-      letter-spacing: 0.35em;
-      text-transform: uppercase;
-      padding: 12px;
-      cursor: pointer;
-      transition: background 0.3s, border-color 0.3s;
-      width: 100%;
-    }
-
-    button[type="submit"]:hover {
-      background: rgba(103, 171, 205, 0.08);
-      border-color: #67ABCD;
-    }
-
-    .divider {
-      width: 40px;
-      height: 1px;
-      background: rgba(103, 171, 205, 0.25);
-    }
-
-    .sub-link {
-      font-size: 9px;
-      letter-spacing: 0.3em;
-      text-transform: uppercase;
-      color: #555;
-      text-decoration: none;
-      transition: color 0.3s;
-    }
-
-    .sub-link:hover {
-      color: #67ABCD;
-    }
-  </style>
+  <link rel="stylesheet" href="/static/css/theme.css">
+  <link rel="stylesheet" href="/static/css/login.css">
+  <script>
+    // ページ描画前にテーマを適用してフラッシュを防ぐ
+    (function() {
+      const t = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
 </head>
 <body>
   <div class="login-box">
@@ -142,5 +34,19 @@
     </form>
     <a href="/signup" class="sub-link">新規会員登録</a>
   </div>
+  <button id="theme-toggle" title="テーマ切り替え"></button>
+  <script>
+    (function() {
+      const btn = document.getElementById('theme-toggle');
+      // data-theme は <head> スクリプト済みなのでボタン表示のみ同期
+      btn.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀' : '🌙';
+      btn.addEventListener('click', function() {
+        const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', t);
+        btn.textContent = t === 'dark' ? '☀' : '🌙';
+        localStorage.setItem('theme', t);
+      });
+    })();
+  </script>
 </body>
 </html>

@@ -1,0 +1,188 @@
+/* ============================================================
+   テーマ変数定義
+   data-theme="dark"  → デフォルト（ダークモード）
+   data-theme="light" → ライトモード（白基調）
+   ============================================================ */
+
+:root, [data-theme="dark"] {
+  /* 背景 */
+  --bg-body-color:    #000305;
+  --bg-body:          radial-gradient(circle farthest-corner at center, #223538 0%, #000305 100%);
+  --bg-sub-page:      #0d1117;
+  --bg-loading:       radial-gradient(circle farthest-corner at center, #223538 0%, #000305 100%);
+  --bg-nav:           rgba(0, 0, 0, 0.85);
+  --bg-footer:        linear-gradient(-45deg, #150112, #001127, #000500, #012207);
+  --bg-modal:         linear-gradient(160deg, #0a0f1a, #0d1520);
+  --bg-overlay:       rgba(0, 0, 0, 0.75);
+  --bg-slide-default: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  --bg-slide-overlay: rgba(0, 0, 0, 0.5);
+  --bg-slide-intro:   rgba(0, 0, 0, 0.6);
+  --bg-header-fixed:  linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.05) 15%, rgba(0,0,0,0.2) 35%, rgba(0,0,0,0.5) 60%, rgba(0,0,0,0.75) 80%, rgba(0,0,0,0.8) 100%);
+  --bg-footer-fixed:  linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.05) 15%, rgba(0,0,0,0.2) 35%, rgba(0,0,0,0.5) 60%, rgba(0,0,0,0.75) 80%, rgba(0,0,0,0.8) 100%);
+  --bg-menu-block:    rgba(0, 0, 0, 0.75);
+  --bg-image-overlay: rgba(0, 0, 0, 0.85);
+
+  /* テキスト */
+  --color-body:       #ccc;
+  --color-heading:    #eee;
+  --color-header-h1:  #ddd;
+  --color-nav-link:   #ccc;
+  --color-nav-link-sm:#999;
+  --color-footer:     #777;
+  --color-modal-text: #ddd;
+  --color-modal-sub:  #888;
+  --color-slide-text: #fff;
+
+  /* アクセントカラー */
+  --color-accent:     #67ABCD;
+  --color-accent-hover: #a8d4e8;
+
+  /* ボーダー */
+  --border-modal:     rgba(255, 255, 255, 0.06);
+  --border-btn:       rgba(255, 255, 255, 0.3);
+  --border-btn-cancel:rgba(255, 255, 255, 0.1);
+  --border-nav-link:  rgba(255, 255, 255, 0.8);
+
+  /* ハンバーガーメニュー */
+  --color-hamburger:  #fff;
+
+  /* 削除ボタン */
+  --border-delete-btn: rgba(255, 255, 255, 0.4);
+  --color-delete-btn:  rgba(255, 255, 255, 0.6);
+
+  /* スライダーページネーション */
+  --color-pagination:  rgba(255, 255, 255, 0.5);
+  --color-pagination-active: #fff;
+  --color-slider-arrow: #fff;
+  --color-btn-text:    #fff;
+  --color-btn-hover-text: #373737;
+  --border-btn-slider: #e1e1e1;
+  --bg-btn-slider:     #e1e1e1;
+
+  /* 編集input */
+  --bg-edit-input:    rgba(255, 255, 255, 0.04);
+  --border-edit-input:rgba(255, 255, 255, 0.15);
+  --color-edit-input: #ddd;
+
+  /* howToUse背景 */
+  --bg-how-to-use:    radial-gradient(circle farthest-corner at center, #223538 0%, #000305 100%);
+  --color-how-to-use-text: #ccc;
+
+  /* スライダーボタンホバー */
+  --bg-btn-slide-hover: rgba(0, 0, 0, 0.75);
+
+  /* テーマトグルボタン */
+  --color-theme-toggle: #555;
+}
+
+[data-theme="light"] {
+  /* 背景 */
+  --bg-body-color:    #ffffff;
+  --bg-body:          linear-gradient(135deg, #f5f5f5 0%, #fafafa 50%, #ffffff 100%);
+  --bg-sub-page:      #ffffff;
+  --bg-loading:       linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
+  --bg-nav:           rgba(255, 255, 255, 0.95);
+  --bg-footer:        linear-gradient(-45deg, #e0e0e0, #e8e8e8, #ebebeb, #e5e5e5);
+  --bg-modal:         linear-gradient(160deg, #ffffff, #f8f8f8);
+  --bg-overlay:       rgba(200, 200, 200, 0.5);
+  --bg-slide-default: linear-gradient(135deg, #e8e8e8 0%, #f0f0f0 50%, #ffffff 100%);
+  /* index.htmlの背景が白すぎる場合は以下の第4引数を調整 */
+  --bg-slide-overlay: rgba(200, 200, 200, 0.5);
+  --bg-slide-intro:   rgba(255, 255, 255, 0.4); 
+  --bg-header-fixed:  linear-gradient(0deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 15%, rgba(255,255,255,0.2) 35%, rgba(255,255,255,0.55) 60%, rgba(255,255,255,0.8) 80%, rgba(255,255,255,0.9) 100%);
+  --bg-footer-fixed:  linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 15%, rgba(255,255,255,0.2) 35%, rgba(255,255,255,0.55) 60%, rgba(255,255,255,0.8) 80%, rgba(255,255,255,0.9) 100%);
+  --bg-menu-block:    rgba(255, 255, 255, 0.95);
+  --bg-image-overlay: rgba(255, 255, 255, 0.2);
+
+  /* テキスト */
+  --color-body:       #334;
+  --color-heading:    #334;
+  --color-header-h1:  #334;
+  --color-nav-link:   #334;
+  --color-nav-link-sm:#334;
+  --color-footer:     #334;
+  --color-modal-text: #334;
+  --color-modal-sub:  #334;
+  --color-slide-text: #334;
+
+  /* アクセントカラー */
+  --color-accent:     #2980b9;
+  --color-accent-hover: #1a6fa0;
+
+  /* ボーダー */
+  --border-modal:     rgba(41, 128, 185, 0.2);
+  --border-btn:       rgba(41, 128, 185, 0.5);
+  --border-btn-cancel:rgba(41, 128, 185, 0.2);
+  --border-nav-link:  rgba(41, 128, 185, 0.8);
+
+  /* ハンバーガーメニュー */
+  --color-hamburger:  #334;
+
+  /* 削除ボタン */
+  --border-delete-btn: #334;
+  --color-delete-btn:  #334;
+
+  /* スライダーページネーション */
+  --color-pagination:  rgba(41, 128, 185, 0.4);
+  --color-pagination-active: #334;
+  --color-slider-arrow: #334;
+  --color-btn-text:    #334;
+  --color-btn-hover-text: #fff;
+  --border-btn-slider: #2980b9;
+  --bg-btn-slider:     #2980b9;
+
+  /* 編集input */
+  --bg-edit-input:    rgba(41, 128, 185, 0.04);
+  --border-edit-input:rgba(41, 128, 185, 0.3);
+  --color-edit-input: #334;
+
+  /* howToUse背景 */
+  --bg-how-to-use:    linear-gradient(135deg, #f5f5f5 0%, #fafafa 50%, #ffffff 100%);
+  --color-how-to-use-text: #334;
+
+  /* スライダーボタンホバー */
+  --bg-btn-slide-hover: rgba(255, 255, 255, 0.85);
+
+  /* テーマトグルボタン */
+  --color-theme-toggle: #555;
+}
+
+/* ============================================================
+   html背景色（Safariラバーバンドスクロール用）
+   background-image だけでは Safari がデフォルト白を使うため
+   background-color も必ず設定する
+   ============================================================ */
+html {
+  background-color: var(--bg-body-color);
+}
+
+/* ============================================================
+   テーマ切り替えボタン（共通）
+   ============================================================ */
+#theme-toggle {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 6000;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--color-theme-toggle);
+  background: transparent;
+  color: var(--color-theme-toggle);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+  opacity: 0.7;
+}
+
+@media (hover: hover) {
+  #theme-toggle:hover {
+    opacity: 1;
+    background: var(--color-theme-toggle);
+    color: #fff;
+  }
+}

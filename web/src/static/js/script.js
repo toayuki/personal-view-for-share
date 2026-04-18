@@ -1,10 +1,11 @@
-import { onOpenConfirm } from "./modal.js";
-import { onOpenEdit } from "./editModal.js";
+import { openConfirmModal } from "./modal.js";
+import { onOpenEdit } from "./contentsEditModal.js";
 import { createGridItem, startConversionPolling, addConvertingOverlay } from "./getList.js";
 
 //Gメニュー
 var bnrBtn = $('#g_navi');
 var $header = $('header');
+var $footer = $('footer');
 var scrollpos;
 
 $('.bg_bl').hide();
@@ -30,13 +31,20 @@ $(function () {
 });
 
 
-$(window).scroll(function () {
-  if ($(window).scrollTop() > 30) {
-    $header.addClass('fixed');
-  } else {
-    $header.removeClass('fixed');
-  }
-});
+// index.htmlはスクロール位置に関わらず常にfixedを適用
+if (document.querySelector('.slideshow')) {
+  $header.addClass('fixed');
+  $footer.addClass('fixed');
+  document.body.style.overflow = 'hidden'; // スライドショーが全画面を占めるためページ自体のスクロールを無効化
+} else {
+  $(window).scroll(function () {
+    if ($(window).scrollTop() > 30) {
+      $header.addClass('fixed');
+    } else {
+      $header.removeClass('fixed');
+    }
+  });
+}
 
 
 
@@ -163,7 +171,7 @@ document.addEventListener("click", async (e) => {
         clickedItem.classList.add("selected");
       }
       const targets = getSelectedItems();
-      await onOpenConfirm({
+      await openConfirmModal({
         message: `${targets.length}件を削除しますか？`,
         onOk: async () => {
           for (const item of targets) {
@@ -179,7 +187,7 @@ document.addEventListener("click", async (e) => {
       });
     } else {
       const targetId = deleteLink.dataset.id;
-      await onOpenConfirm({
+      await openConfirmModal({
         message: "本当に削除しますか？",
         onOk: async () => {
           try {
@@ -205,7 +213,7 @@ document.addEventListener("click", async (e) => {
         clickedItem.classList.add("selected");
       }
       const targets = getSelectedItems();
-      await onOpenConfirm({
+      await openConfirmModal({
         message: `ファイルを含む全データ ${targets.length}件を削除します。元に戻せません。`,
         onOk: async () => {
           for (const item of targets) {
@@ -221,7 +229,7 @@ document.addEventListener("click", async (e) => {
       });
     } else {
       const targetId = forceDeleteLink.dataset.id;
-      await onOpenConfirm({
+      await openConfirmModal({
         message: "ファイルを含む全データを削除します。元に戻せません。",
         onOk: async () => {
           try {

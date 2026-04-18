@@ -41,7 +41,7 @@ script.onload = function () {
     return new THREE.CanvasTexture(c);
   }
 
-  const count = 10;
+  const count = 1000;
   const positions  = new Float32Array(count * 3);
   const colors     = new Float32Array(count * 3);
   const phases     = new Float32Array(count);

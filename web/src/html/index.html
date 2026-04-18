@@ -109,15 +109,15 @@
 {% block script %}
 <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
 <!-- particle effect: uncomment to enable -->
-<!-- <script src="/static/js/particleEffect.js"></script> -->
+<script src="/static/js/particleEffect.js"></script>
 {% if categories %}
 <script src='https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.1/TweenMax.min.js'></script>
 <script src="/static/js/slider.js"></script>
 {% endif %}
 <script type="module" src="/static/js/script.js"></script>
-<script type="module" src="/static/js/categoryModal.js"></script>
+<script type="module" src="/static/js/categoryCreateModal.js"></script>
 <script type="module">
-  import { onOpenConfirm, openNotification } from "/static/js/modal.js";
+  import { openConfirmModal, openNotificationModal } from "/static/js/modal.js";
 
   // slider.js のアニメーション完了（data('wait') が false になる）を待つ
   function waitForSlideshow(el) {
@@ -131,14 +131,14 @@
     if (!btn) return;
     e.stopPropagation();
     const categoryId = btn.dataset.categoryId;
-    await onOpenConfirm({
+    await openConfirmModal({
       message: "このカテゴリを削除しますか？",
       onOk: async () => {
         const slide = btn.closest(".slide");
         const slideIndex = [...document.querySelectorAll('.slides .slide')].indexOf(slide);
         const res = await fetch(`/categories/${categoryId}`, { method: "DELETE" });
         if (!res.ok) return;
-        openNotification({ message: "削除しました。" });
+        openNotificationModal({ message: "削除しました。" });
         document.querySelector(`#g_navi a[href="${categoryId}.html"]`)?.closest('li')?.remove();
         // 次スライドへの遷移アニメーションを開始
         document.querySelector('.arrow.next').click();
