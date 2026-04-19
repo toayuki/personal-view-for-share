@@ -140,6 +140,7 @@ function addCategorySlide(id, name, description, imageFileName) {
   slide.querySelector('.btn').href = `${id}.html`;
   const deleteBtn = slide.querySelector('.category-delete-btn');
   deleteBtn.dataset.categoryId = id;
+  slide.querySelector('.category-share-btn').dataset.categoryId = id;
   const imageContainer = slide.querySelector('.image-container');
   if (imageFileName) {
     const img = slide.querySelector('.image');

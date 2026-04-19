@@ -303,14 +303,37 @@ def create_user(data: dict = Body(...)):
     password_hash = hashlib.sha256(password.encode()).hexdigest()
     conn = sqlite3.connect("main.db")
     cur = conn.cursor()
+    user_id = _generate_id()
     try:
         cur.execute(
             "INSERT INTO users (id, user_name, password_hash, email_address) VALUES (?, ?, ?, ?)",
-            (_generate_id(), username, password_hash, email),
+            (user_id, username, password_hash, email),
         )
         conn.commit()
     except sqlite3.IntegrityError:
         conn.close()
         return JSONResponse(status_code=409, content={"error": "username or email already exists"})
+    conn.close()
+    return {"ok": True, "user_id": user_id}
+
+
+@app.post("/users/{user_id}/viewable-categories")
+def add_viewable_category(user_id: str, data: dict = Body(...)):
+    """ユーザーの閲覧可能カテゴリにIDを追加する"""
+    category_id = data.get("category_id")
+    if not category_id:
+        return JSONResponse(status_code=400, content={"error": "category_id required"})
+    conn = sqlite3.connect("main.db")
+    cur = conn.cursor()
+    cur.execute("SELECT viewable_category_ids FROM users WHERE id=? AND deleted_at IS NULL", (user_id,))
+    row = cur.fetchone()
+    if not row:
+        conn.close()
+        return JSONResponse(status_code=404, content={"error": "user not found"})
+    ids = json.loads(row[0]) if row[0] else []
+    if category_id not in ids:
+        ids.append(category_id)
+        cur.execute("UPDATE users SET viewable_category_ids=? WHERE id=?", (json.dumps(ids), user_id))
+        conn.commit()
     conn.close()
     return {"ok": True}

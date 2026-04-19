@@ -170,7 +170,7 @@ async def login_post(
         }
         audit_logger.log_login_access(event="attempt_success", **common)
         response = RedirectResponse(url="/", status_code=302)
-        response.set_cookie("session", token, httponly=True, samesite="lax")
+        response.set_cookie("session", token, httponly=True, samesite="lax", max_age=86400 * 180)
         return response
     audit_logger.log_login_access(event="attempt_failed", **common)
     return html.TemplateResponse("login.html", {"request": request, "error": True})

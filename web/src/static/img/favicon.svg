@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#223538"/>
+      <stop offset="100%" stop-color="#000305"/>
+    </radialGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a8d4e8"/>
+      <stop offset="100%" stop-color="#67ABCD"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+
+  <!-- Person icon (center) -->
+  <circle cx="256" cy="200" r="56" fill="url(#accent)"/>
+  <path d="M148 370 C148 310 200 272 256 272 C312 272 364 310 364 370" fill="url(#accent)"/>
+
+  <!-- Share nodes -->
+  <circle cx="390" cy="130" r="28" fill="none" stroke="url(#accent)" stroke-width="10"/>
+  <circle cx="390" cy="382" r="28" fill="none" stroke="url(#accent)" stroke-width="10"/>
+  <circle cx="122" cy="256" r="28" fill="none" stroke="url(#accent)" stroke-width="10"/>
+
+  <!-- Connecting lines -->
+  <line x1="362" y1="148" x2="296" y2="195" stroke="#67ABCD" stroke-width="7" stroke-linecap="round" opacity="0.7"/>
+  <line x1="362" y1="362" x2="300" y2="310" stroke="#67ABCD" stroke-width="7" stroke-linecap="round" opacity="0.7"/>
+  <line x1="150" y1="256" x2="210" y2="256" stroke="#67ABCD" stroke-width="7" stroke-linecap="round" opacity="0.7"/>
+</svg>

@@ -917,6 +917,51 @@ body.edit-mode #selectAllBtn {
   gap: 12px;
 }
 
+.share-square-btns {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin: 16px 0 0;
+}
+
+.share-square-btn {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--border-btn);
+  color: var(--color-modal-text);
+  cursor: pointer;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.share-square-btn i {
+  font-size: 20px;
+}
+
+@media (hover: hover) {
+  .share-square-btn:hover {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+  }
+}
+
+.share-qr-container {
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.share-qr-container canvas,
+.share-qr-container img {
+  border: 4px solid #fff;
+}
+
 .btn {
   flex: 1;
   padding: 10px 0;
