@@ -42,6 +42,9 @@ SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 # 一時登録トークン {token: {"email": str, "expires": datetime}}
 pending_registrations: dict[str, dict] = {}
 
+# 招待トークン {token: {"category_id": str, "expires": datetime}}
+invite_tokens: dict[str, dict] = {}
+
 app = FastAPI()
 
 is_debug_mode = True
@@ -50,7 +53,7 @@ is_debug_mode = True
 # {token: {"user_id": int, "role": str, "viewable_category_ids": list[str] | None}}
 active_sessions: dict[str, dict] = {}
 
-_PUBLIC_PATHS = {"/login", "/signup", "/signup/details", "/signup/complete", "/favicon.ico"}
+_PUBLIC_PATHS = {"/login", "/signup", "/signup/details", "/signup/complete", "/invite", "/invite/accept", "/favicon.ico"}
 
 
 def _get_user_categories(session: dict) -> list:
@@ -84,7 +87,7 @@ def _check_category_access(request: Request, category_id: str) -> None:
 async def auth_middleware(request: Request, call_next):
     """未認証リクエストを /login にリダイレクトする"""
     path = request.url.path
-    if path in _PUBLIC_PATHS or path.startswith("/static"):
+    if path in _PUBLIC_PATHS or path.startswith("/static") or path.startswith("/invite/"):
         response = await call_next(request)
     else:
         token = request.cookies.get("session")
@@ -138,8 +141,13 @@ app.mount(path="/static", app=StaticFiles(directory="src/static"), name="static"
 
 
 @app.get("/login", response_class=HTMLResponse)
-async def login_page(request: Request):
-    return html.TemplateResponse("login.html", {"request": request})
+async def login_page(request: Request, invite: str = ""):
+    token = request.cookies.get("session")
+    if token and token in active_sessions:
+        if invite and invite in invite_tokens:
+            return RedirectResponse(url=f"/invite?token={invite}", status_code=302)
+        return RedirectResponse(url="/", status_code=302)
+    return html.TemplateResponse("login.html", {"request": request, "invite": invite})
 
 
 @app.post("/login", response_class=HTMLResponse)
@@ -147,6 +155,7 @@ async def login_post(
     request: Request,
     username: str = Form(...),
     password: str = Form(...),
+    invite: str = Form(""),
 ):
     ip = audit_logger.get_client_ip(request)
     common = dict(
@@ -169,7 +178,8 @@ async def login_post(
             "viewable_category_ids": viewable,
         }
         audit_logger.log_login_access(event="attempt_success", **common)
-        response = RedirectResponse(url="/", status_code=302)
+        redirect_url = f"/invite?token={invite}" if invite and invite in invite_tokens else "/"
+        response = RedirectResponse(url=redirect_url, status_code=302)
         response.set_cookie("session", token, httponly=True, samesite="lax", max_age=86400 * 180)
         return response
     audit_logger.log_login_access(event="attempt_failed", **common)
@@ -177,8 +187,8 @@ async def login_post(
 
 
 @app.get("/signup", response_class=HTMLResponse)
-async def signup_page(request: Request):
-    return html.TemplateResponse("signup.html", {"request": request})
+async def signup_page(request: Request, invite: str = ""):
+    return html.TemplateResponse("signup.html", {"request": request, "invite": invite})
 
 
 @app.post("/signup")
@@ -193,12 +203,14 @@ async def signup_post(request: Request):
         referer=request.headers.get("referer", "-"),
         accept_language=request.headers.get("accept-language", "-"),
     )
+    invite = data.get("invite", "").strip()
     if not email:
         return Response(status_code=400, content='{"error":"email is required"}', media_type="application/json")
     token = secrets.token_urlsafe(32)
     pending_registrations[token] = {
         "email": email,
         "expires": datetime.now() + timedelta(hours=24),
+        "invite_token": invite if invite and invite in invite_tokens else None,
     }
     origin = request.headers.get("origin", str(request.base_url).rstrip("/"))
     confirm_url = f"{origin}/signup/details?token={token}"
@@ -260,9 +272,106 @@ async def signup_complete(request: Request, token: str = Form(...), username: st
             "request": request, "email": entry["email"], "token": token,
             "error": "登録に失敗しました。ユーザー名が既に使用されています。",
         })
+    user_id = res.json().get("user_id")
+    invite_token = entry.get("invite_token")
+    if user_id and invite_token:
+        invite_entry = invite_tokens.get(invite_token)
+        if invite_entry and datetime.now() <= invite_entry["expires"]:
+            requests.post(f"{API_URL}/users/{user_id}/viewable-categories", json={"category_id": invite_entry["category_id"]}, timeout=10)
+        invite_tokens.pop(invite_token, None)
     pending_registrations.pop(token, None)
     audit_logger.log_login_access(event="signup_complete", email=entry["email"], **common)
     return html.TemplateResponse("signupDetails.html", {"request": request, "done": True, "username": username})
+
+
+@app.post("/invite")
+async def create_invite(request: Request):
+    """招待URLを発行する"""
+    token = request.cookies.get("session")
+    if not token or token not in active_sessions:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    data = await request.json()
+    category_id = data.get("category_id")
+    if not category_id:
+        raise HTTPException(status_code=400, detail="category_id required")
+    invite_token = secrets.token_urlsafe(32)
+    invite_tokens[invite_token] = {"category_id": category_id, "expires": datetime.now() + timedelta(hours=24)}
+    origin = request.headers.get("origin", str(request.base_url).rstrip("/"))
+    return {"url": f"{origin}/invite?token={invite_token}"}
+
+
+@app.get("/invite/{token}/preview-image")
+def invite_preview_image(token: str):
+    """招待トークンでカテゴリ画像を公開する（未ログインでもアクセス可）"""
+    entry = invite_tokens.get(token)
+    if not entry or datetime.now() > entry["expires"]:
+        raise HTTPException(status_code=404)
+    category_id = entry["category_id"]
+    try:
+        res = requests.get(f"{API_URL}/categories/{category_id}", timeout=10)
+        if res.status_code == 200:
+            cat = res.json().get("category")
+            if cat and cat.get("image_file_name"):
+                file_path = BASE_DIR / category_id / "images" / cat["image_file_name"]
+                if file_path.exists():
+                    return FileResponse(file_path)
+    except Exception:
+        pass
+    raise HTTPException(status_code=404)
+
+
+@app.get("/invite", response_class=HTMLResponse)
+async def signup_invite_page(request: Request, token: str = ""):
+    """招待リンクの確認ページ"""
+    entry = invite_tokens.get(token)
+    if not entry or datetime.now() > entry["expires"]:
+        invite_tokens.pop(token, None)
+        return html.TemplateResponse("inviteConfirm.html", {"request": request, "invalid": True})
+    category_id = entry["category_id"]
+    category_name = None
+    has_image = False
+    try:
+        res = requests.get(f"{API_URL}/categories/{category_id}", timeout=10)
+        if res.status_code == 200:
+            cat = res.json().get("category")
+            if cat:
+                category_name = cat.get("name")
+                has_image = bool(cat.get("image_file_name"))
+    except Exception:
+        pass
+    session_token = request.cookies.get("session")
+    is_logged_in = bool(session_token and session_token in active_sessions)
+    return html.TemplateResponse("inviteConfirm.html", {
+        "request": request,
+        "token": token,
+        "category_name": category_name,
+        "image_url": f"/invite/{token}/preview-image" if has_image else None,
+        "is_logged_in": is_logged_in,
+    })
+
+
+@app.post("/invite/accept")
+async def signup_invite_accept(request: Request, token: str = Form(...)):
+    """ログイン済みユーザーが招待を受け入れてカテゴリ閲覧権限を付与する"""
+    session_token = request.cookies.get("session")
+    session = active_sessions.get(session_token, {})
+    user_id = session.get("user_id")
+    if not user_id:
+        return RedirectResponse(url=f"/invite?token={token}", status_code=302)
+    entry = invite_tokens.get(token)
+    if not entry or datetime.now() > entry["expires"]:
+        invite_tokens.pop(token, None)
+        return RedirectResponse(url="/", status_code=302)
+    category_id = entry["category_id"]
+    requests.post(f"{API_URL}/users/{user_id}/viewable-categories", json={"category_id": category_id}, timeout=10)
+    viewable = list(session.get("viewable_category_ids") or [])
+    if category_id not in viewable:
+        viewable.append(category_id)
+        active_sessions[session_token]["viewable_category_ids"] = viewable
+    invite_tokens.pop(token, None)
+    return RedirectResponse(url="/", status_code=302)
+
+
 
 
 @app.post("/logout")

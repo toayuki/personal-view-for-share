@@ -159,6 +159,9 @@
   <p class="signup-title">signup</p>
   <p class="description">メールアドレスを送信してください</p>
   <form id="signupForm">
+    {% if invite %}
+    <input type="hidden" id="inviteToken" value="{{ invite }}">
+    {% endif %}
     <div class="field">
       <label for="email">Email</label>
       <input type="email" id="email" name="email" autocomplete="email" autofocus>
@@ -176,6 +179,7 @@
   document.getElementById("signupForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = document.getElementById("email").value;
+    const invite = document.getElementById("inviteToken")?.value || "";
     const btn = e.target.querySelector("button[type='submit']");
     document.getElementById("successMsg").style.display = "none";
     document.getElementById("errorMsg").style.display = "none";
@@ -186,7 +190,7 @@
       const res = await fetch("/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, invite }),
       });
       spinner.classList.add("loaded");
       if (res.ok) {
