@@ -82,22 +82,20 @@ def log_login_access(
     """
     try:
         LOG_DIR.mkdir(exist_ok=True)
-        parts = [
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            f"event={event}",
-            f"ip={ip}",
-        ]
+        entry: dict = {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "event": event,
+            "ip": ip,
+            "referer": sanitize(referer),
+            "lang": sanitize(accept_language),
+            "user_agent": sanitize(user_agent),
+        }
         if username is not None:
-            parts.append(f"username={sanitize(username)}")
+            entry["username"] = sanitize(username)
         if email is not None:
-            parts.append(f"email={sanitize(email)}")
-        parts += [
-            f"referer={sanitize(referer)}",
-            f"lang={sanitize(accept_language)}",
-            f"user_agent={sanitize(user_agent)}",
-        ]
+            entry["email"] = sanitize(email)
         with _LOGIN_ACCESS_LOG.open("a", encoding="utf-8") as f:
-            f.write(" | ".join(parts) + "\n")
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
     except Exception:
         pass
 
@@ -122,10 +120,13 @@ def log_action(
         LOG_DIR.mkdir(exist_ok=True)
         log_file = LOG_DIR / f"{user_id or 'anonymous'}.log"
         safe_details = {k: sanitize(v) if isinstance(v, str) else v for k, v in (details or {}).items()}
-        line = (
-            f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | action={action} | ip={ip or '-'}"
-            f" | details={json.dumps(safe_details, ensure_ascii=False)}\n"
-        )
+        entry = {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "action": action,
+            "ip": ip or "-",
+            "details": safe_details,
+        }
+        line = json.dumps(entry, ensure_ascii=False) + "\n"
         with log_file.open("a", encoding="utf-8") as f:
             f.write(line)
     except Exception:

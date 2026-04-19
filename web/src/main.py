@@ -385,6 +385,86 @@ async def logs_page(request: Request):
     )
     return html.TemplateResponse("logs.html", {"request": request, "log_files": log_files})
 
+
+@app.get("/logs/ip-list")
+async def logs_ip_list(request: Request):
+    """login_access.log からIPアドレス統計を返す（admin 限定）"""
+    token = request.cookies.get("session")
+    if active_sessions.get(token, {}).get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    log_path = audit_logger.LOG_DIR / "login_access.log"
+    if not log_path.exists():
+        return {"ips": []}
+
+    ip_stats: dict[str, dict] = {}
+    with log_path.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                parts = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            ts = parts.get("timestamp", "")
+            ip = parts.get("ip")
+            if not ip:
+                continue
+            event = parts.get("event", "unknown")
+            lang = parts.get("lang", "-")
+            if ip not in ip_stats:
+                ip_stats[ip] = {"count": 0, "events": {}, "first": ts, "last": ts, "lang": lang}
+            ip_stats[ip]["count"] += 1
+            ip_stats[ip]["events"][event] = ip_stats[ip]["events"].get(event, 0) + 1
+            if ts > ip_stats[ip]["last"]:
+                ip_stats[ip]["last"] = ts
+                ip_stats[ip]["lang"] = lang
+
+    result = sorted(
+        [{"ip": ip, **stats} for ip, stats in ip_stats.items()],
+        key=lambda x: x["last"],
+        reverse=True,
+    )
+    return {"ips": result}
+
+
+@app.get("/logs/stream")
+async def logs_stream(request: Request, file: str = "login_access.log"):
+    """SSE でログファイルをリアルタイム配信する（admin 限定）"""
+    token = request.cookies.get("session")
+    if active_sessions.get(token, {}).get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    # パストラバーサル対策：ファイル名のみ使用し LOG_DIR 内に限定
+    log_path = audit_logger.LOG_DIR / Path(file).name
+    if not log_path.exists() or log_path.parent != audit_logger.LOG_DIR:
+        raise HTTPException(status_code=404, detail="Log file not found")
+
+    async def generate():
+        try:
+            with log_path.open("r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.rstrip()
+                    if line:
+                        yield f"data: {line}\n\n"
+                while True:
+                    if await request.is_disconnected():
+                        break
+                    line = f.readline()
+                    if line:
+                        yield f"data: {line.rstrip()}\n\n"
+                    else:
+                        await anyio.sleep(1)
+        except Exception:
+            pass
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
 @app.get("/howToUse.html", response_class=HTMLResponse)
 async def how_to_use_page(request: Request):
     """howToUseページを返す"""
