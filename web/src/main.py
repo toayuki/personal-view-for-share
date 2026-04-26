@@ -119,6 +119,7 @@ _conversion_executor = ThreadPoolExecutor(max_workers=3)
 _pending_conversions: dict[str, tuple] = {}
 
 html = Jinja2Templates(directory="src/html")
+html.env.globals["api_url"] = API_URL
 
 def _convert_to_hls_tracked(stored_file_name: str, input_path, output_dir):
     """HLS変換を実行し、変換状態・進捗率を更新する"""

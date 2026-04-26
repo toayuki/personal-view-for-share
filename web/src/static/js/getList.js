@@ -1,8 +1,9 @@
 const result = document.getElementById("result");
 const categoryId = result?.dataset.categoryId;
+const API_BASE = window.API_BASE;
 
 if (result && categoryId) {
-  fetch(`https://share-api.toa-yuki.com/${categoryId}/getList`)
+  fetch(`${API_BASE}/${categoryId}/getList`)
     .then(response => response.json())
     .then(data => {
       data.items.forEach((item) => {
@@ -72,12 +73,12 @@ export function createGridItem(item) {
   li.appendChild(linkArea);
 
   const a = document.createElement("a");
-  a.href = `https://${window.location.hostname}/personal-web/contents/${categoryId}/${item.file_type === "video" ? "video" : "img"}/${item.file_name}`;
+  a.href = `/personal-web/contents/${categoryId}/${item.file_type === "video" ? "video" : "img"}/${item.file_name}`;
   a.dataset.fancybox = "gallery";
   a.dataset.type = item.file_type === "video" ? "html5video" : "image";
 
   const img = document.createElement("img");
-  img.src = `https://${window.location.hostname}/personal-web/contents/${categoryId}/thumbnail/${item.thumbnail_file_name ?? item.file_name}`;
+  img.src = `/personal-web/contents/${categoryId}/thumbnail/${item.thumbnail_file_name ?? item.file_name}`;
   a.appendChild(img);
 
   const typeIcon = document.createElement("span");

@@ -12,6 +12,7 @@ USERS = [
     {"user_name": "user1",   "email": "user1@gmail.com",   "password": "user123",   "role": "user"},
     {"user_name": "user2",   "email": "user2@gmail.com",   "password": "user123",   "role": "user"},
     {"user_name": "user3",   "email": "user3@gmail.com",   "password": "user123",   "role": "user"},
+    {"user_name": "admin",   "email": "admin@gmail.com",   "password": "Admin1234",   "role": "admin"},
 ]
 
 conn = sqlite3.connect("main.db")
