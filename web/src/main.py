@@ -119,7 +119,9 @@ _conversion_executor = ThreadPoolExecutor(max_workers=3)
 _pending_conversions: dict[str, tuple] = {}
 
 html = Jinja2Templates(directory="src/html")
+GLOBAL_API_URL = os.getenv("GLOBAL_API_URL", "")
 html.env.globals["api_url"] = API_URL
+html.env.globals["global_api_url"] = GLOBAL_API_URL
 
 def _convert_to_hls_tracked(stored_file_name: str, input_path, output_dir):
     """HLS変換を実行し、変換状態・進捗率を更新する"""
@@ -463,7 +465,7 @@ async def read_root(request: Request):
     return html.TemplateResponse("index.html", context)
 
 
-@app.get("/personal-web/categories/{category_id}/bg/{file_name}")
+@app.api_route("/personal-web/categories/{category_id}/bg/{file_name}", methods=["GET", "HEAD"])
 def get_category_bg(category_id: str, file_name: str):
     """カテゴリ背景画像・動画を返す"""
     file_path = BASE_DIR / category_id / "bg" / file_name
@@ -788,7 +790,7 @@ def download_original(request: Request, content_id: str):
     )
 
 
-@app.get("/personal-web/contents/{category_id}/img/{file_name}")
+@app.api_route("/personal-web/contents/{category_id}/img/{file_name}", methods=["GET", "HEAD"])
 def get_img_file(request: Request, category_id: str, file_name: str):
     """imgファイルを返す"""
     _check_category_access(request, category_id)
@@ -796,7 +798,7 @@ def get_img_file(request: Request, category_id: str, file_name: str):
     return FileResponse(file_path)
 
 
-@app.get("/personal-web/contents/{category_id}/video/{file_path:path}")
+@app.api_route("/personal-web/contents/{category_id}/video/{file_path:path}", methods=["GET", "HEAD"])
 def get_video_file(request: Request, category_id: str, file_path: str):
     """videoファイルを返す（HLS対応）"""
     _check_category_access(request, category_id)
@@ -809,7 +811,7 @@ def get_video_file(request: Request, category_id: str, file_path: str):
     return FileResponse(full_path)
 
 
-@app.get("/personal-web/contents/{category_id}/thumbnail/{file_name}")
+@app.api_route("/personal-web/contents/{category_id}/thumbnail/{file_name}", methods=["GET", "HEAD"])
 def get_thumbnail_file(request: Request, category_id: str, file_name: str):
     """thumbnailファイルを返す"""
     _check_category_access(request, category_id)

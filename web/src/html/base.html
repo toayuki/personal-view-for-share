@@ -18,7 +18,9 @@
     <link rel="stylesheet" href="static/css/style.css?v=20260221">
     {% endblock %}
     <script>
-      window.API_BASE = "{{ api_url }}";
+      window.API_BASE = location.hostname === 'share.toa-yuki.com'
+        ? "{{ global_api_url }}"
+        : "{{ api_url }}";
       // ページ描画前にテーマを適用してフラッシュを防ぐ
       (function() {
         const t = localStorage.getItem('theme') || 'light';
