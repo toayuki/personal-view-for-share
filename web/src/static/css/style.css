@@ -1159,3 +1159,17 @@ body.edit-mode #selectAllBtn {
   }
 }
 
+/*
+iOS（iPhone/iPad）向けグラデーション上書き
+-webkit-touch-callout は iOS Safari 固有のプロパティのため、
+Android・PC では適用されない
+-------------------------------------------*/
+@supports (-webkit-touch-callout: none) {
+  header.fixed {
+    background: var(--bg-header-fixed-for-mobile);
+  }
+  footer.fixed {
+    background: var(--bg-footer-fixed-for-mobile);
+  }
+}
+
