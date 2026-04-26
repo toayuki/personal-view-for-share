@@ -23,6 +23,8 @@
         const t = localStorage.getItem('theme') || 'light';
         document.documentElement.setAttribute('data-theme', t);
       })();
+      // iOS Safari のアドレスバーを含む物理スクリーン高を CSS 変数にセット
+      document.documentElement.style.setProperty('--screen-height', window.screen.height + 'px');
     </script>
 
     {% block extra_css %}
@@ -34,8 +36,10 @@
     {% block page_style %}{% endblock %}
 </head>
 
-<body class="{{ body_class | default('') }} {% if not (category_image and category_id) %}default-category-bg{% endif %}" id="{{ body_id | default('') }}"
-  {% if category_image and category_id %}style="background-image: linear-gradient(var(--bg-image-overlay), var(--bg-image-overlay)), url('/personal-web/categories/{{ category_id }}/img/{{ category_image }}')"{% endif %}>
+<body class="{{ body_class | default('') }} {% block body_extra_class %}default-category-bg{% endblock %}" id="{{ body_id | default('') }}">
+  <div id="bg-fixed"{% block bg_fixed_style %}{% endblock %}>
+    {% block bg_media %}{% endblock %}
+  </div>
 
 
     <div id="loading" class="{% block loading_class %}{% endblock %}">
@@ -62,10 +66,11 @@
             <ul>
                 <li class="sml"><a href="/">HOME</a></li>
                 {% for category in categories | default([]) %}
-                <li class="sml"><a href="{{ category.id }}.html">{% if category.image_file_name %}<img src="/personal-web/categories/{{ category.id }}/img/{{ category.image_file_name }}" />{% endif %}{{ category.name }}</a></li>
+                <li class="sml"><a href="{{ category.id }}.html">{% if category.image_file_name %}<img src="/personal-web/categories/{{ category.id }}/bg/{{ category.image_file_name }}" />{% endif %}{{ category.name }}</a></li>
                 {% endfor %}
                 <li class="sml"><a href="howToUse.html">How to use</a></li>
                 {% if role == "admin" %}<li class="sml"><a href="/logs">Logs</a></li>{% endif %}
+                {% if role == "admin" %}<li class="sml"><a href="/debug">Debug</a></li>{% endif %}
                 <li class="sml"><a href="#" id="logoutBtn">Logout</a></li>
             </ul>
         </nav>
@@ -73,16 +78,7 @@
     {% endblock %}
 
     <main class="{{ main_class | default('') }}">
-    {% block content %}
-    <h3>{{ category_name }}</h3>
-    <label for="fileUpload" class="file-link">upload</label>
-    <label id="optionsBtn" class="file-link">options</label>
-    <label id="selectAllBtn" class="file-link">select all</label>
-    <input type="file" id="fileUpload" name="file" multiple style="display:none;">
-    <div class="wrapper">
-      <ul class="grid js-anim" id="result" data-category-id="{{ category_id | default('') }}"></ul>
-    </div>
-    {% endblock %}
+    {% block content %}{% endblock %}
     </main>
 
     {% block footer %}

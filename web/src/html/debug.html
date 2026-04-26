@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Debug</title>
+  <script>
+    (function() {
+      const t = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+    document.documentElement.style.setProperty('--screen-height', window.screen.height + 'px');
+  </script>
+  <style>
+    /* ============================================================
+       theme.css
+    ============================================================ */
+    /* :root, [data-theme="dark"] {
+      --bg-body-color:    #000305;
+      --bg-body:          radial-gradient(circle farthest-corner at center, #223538 0%, #000305 100%);
+      --bg-sub-page:      #0d1117;
+      --bg-loading:       radial-gradient(circle farthest-corner at center, #223538 0%, #000305 100%);
+      --bg-nav:           rgba(0, 0, 0, 0.55);
+      --bg-footer:        linear-gradient(-45deg, #150112, #001127, #000500, #012207);
+      --bg-modal:         linear-gradient(160deg, #0a0f1a, #0d1520);
+      --bg-overlay:       rgba(0, 0, 0, 0.75);
+      --bg-header-fixed:  linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.05) 15%, rgba(0,0,0,0.2) 35%, rgba(0,0,0,0.5) 60%, rgba(0,0,0,0.75) 80%, rgba(0,0,0,0.8) 100%);
+      --bg-footer-fixed:  linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.05) 15%, rgba(0,0,0,0.2) 35%, rgba(0,0,0,0.5) 60%, rgba(0,0,0,0.75) 80%, rgba(0,0,0,0.8) 100%);
+      --bg-menu-block:    rgba(0, 0, 0, 0.75);
+      --bg-image-overlay: rgba(0, 0, 0, 0.4);
+      --color-body:       #ccc;
+      --color-heading:    #eee;
+      --color-header-h1:  #ddd;
+      --color-nav-link:   #ccc;
+      --color-nav-link-sm:#999;
+      --color-footer:     #777;
+      --color-modal-text: #ddd;
+      --color-modal-sub:  #888;
+      --color-accent:     #67ABCD;
+      --color-accent-hover: #a8d4e8;
+      --border-modal:     rgba(255, 255, 255, 0.06);
+      --border-btn:       rgba(255, 255, 255, 0.3);
+      --border-nav-link:  rgba(255, 255, 255, 0.8);
+      --color-hamburger:  #fff;
+      --color-theme-toggle: #555;
+    }
+    [data-theme="light"] {
+      --bg-body-color:    #ffffff;
+      --bg-body:          linear-gradient(135deg, #f5f5f5 0%, #fafafa 50%, #ffffff 100%);
+      --bg-sub-page:      #ffffff;
+      --bg-loading:       linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
+      --bg-nav:           rgba(255, 255, 255, 0.2);
+      --bg-footer:        linear-gradient(-45deg, #e0e0e0, #e8e8e8, #ebebeb, #e5e5e5);
+      --bg-header-fixed:  linear-gradient(0deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 15%, rgba(255,255,255,0.2) 35%, rgba(255,255,255,0.55) 60%, rgba(255,255,255,0.8) 80%, rgba(255,255,255,0.9) 100%);
+      --bg-footer-fixed:  linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 15%, rgba(255,255,255,0.2) 35%, rgba(255,255,255,0.55) 60%, rgba(255,255,255,0.8) 80%, rgba(255,255,255,0.9) 100%);
+      --bg-menu-block:    rgba(255, 255, 255, 0.95);
+      --bg-image-overlay: rgba(255, 255, 255, 0.2);
+      --color-body:       #334;
+      --color-heading:    #334;
+      --color-header-h1:  #334;
+      --color-nav-link:   #334;
+      --color-nav-link-sm:#334;
+      --color-footer:     #334;
+      --color-modal-text: #334;
+      --color-modal-sub:  #334;
+      --color-accent:     #2980b9;
+      --color-accent-hover: #1a6fa0;
+      --border-modal:     rgba(41, 128, 185, 0.2);
+      --border-btn:       rgba(41, 128, 185, 0.5);
+      --border-nav-link:  rgba(41, 128, 185, 0.8);
+      --color-hamburger:  #334;
+      --color-theme-toggle: #555;
+    }
+    html { background-color: var(--bg-body-color); } */
+
+    /* ============================================================
+       style.css
+    ============================================================ */
+    body {
+      font: 14px/2 "Open sans", sans-serif;
+      letter-spacing: 0.05em;
+      background-image: var(--bg-body);
+    }
+    #loading { transition: all 1s; position: fixed; inset: 0; z-index: 9999; background-image: var(--bg-loading); }
+    .loaded { opacity: 0; visibility: hidden; }
+
+    header h1, header h2 {
+      margin-top: 0; padding-top: 0; font-size: 13px;
+      position: fixed; top: 0; padding-left: 10px;
+      color: var(--color-header-h1); z-index: 100; font-weight: normal;
+    }
+    header h2 { padding-right: 60px; font-size: 11px; top: 38px; }
+
+    body.sub_page { width: 100%; min-height: 100vh; background: transparent; position: relative; }
+
+    #bg-fixed {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: var(--screen-height, 100lvh);
+      z-index: -1;
+      background-color: var(--bg-sub-page);
+      background-size: cover; background-position: center;
+    }
+
+    header {
+      width: 100%; height: 100px; position: fixed; z-index: 300;
+      transition: all 0.3s ease; top: 0;
+    }
+    header.fixed { background: var(--bg-header-fixed); }
+
+    body.sub_page main { padding-top: 80px; min-height: calc(100vh - 100px); box-sizing: border-box; }
+
+    .bg_bl {
+      background-color: var(--bg-menu-block);
+      height: 100%; width: 100%; opacity: 0.75;
+      display: block; position: fixed; z-index: 2000;
+    }
+    .menu_btn {
+      display: block; height: 60px; width: 60px; text-align: center;
+      position: fixed; z-index: 5000; top: 5px; right: 5px; cursor: pointer;
+    }
+    .menu_btn span {
+      width: 40px; height: 2px; display: block; position: absolute;
+      left: 50%; top: 50%; margin-left: -20px;
+      background-color: var(--color-hamburger);
+      transition: all 0.3s; transform: rotate(0deg);
+    }
+    .menu_btn span.top    { transform: translateY(-12px); }
+    .menu_btn span.bottom { transform: translateY(12px); }
+    .menu_btn.opened span.middle { background: transparent !important; transform: translateX(30px); }
+    .menu_btn.opened span.top    { transform: rotate(-45deg) translateY(0px); }
+    .menu_btn.opened span.bottom { transform: rotate(45deg) translateY(0px); }
+
+    #g_navi {
+      position: fixed; width: 100%; height: 100%; top: 0; overflow: auto;
+      z-index: 3000; background-color: var(--bg-nav); display: none; padding-left: 5%;
+    }
+    #g_navi ul {
+      display: flex; flex-flow: column; justify-content: center;
+      min-height: 100%; list-style: none;
+    }
+    #g_navi ul li { opacity: 0; }
+    #g_navi.nav-open ul li { animation: menuItemSlideIn 0.25s both; animation-delay: var(--item-delay, 0s); }
+    #g_navi.nav-close ul li { animation: menuItemSlideOut 0.25s both; animation-delay: var(--item-delay, 0s); }
+    @keyframes menuItemSlideIn {
+      from { opacity: 0; transform: translateX(var(--slide-from, -40px)); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes menuItemSlideOut {
+      from { opacity: 1; transform: translateX(0); }
+      to   { opacity: 0; transform: translateX(var(--slide-from, -40px)); }
+    }
+    #g_navi ul li a {
+      color: var(--color-nav-link); text-decoration: none; display: inline-block;
+      line-height: 2; font-size: 3vw; letter-spacing: 0.2em; position: relative;
+      margin: 10px 0; font-family: "Oswald", sans-serif; text-transform: uppercase; font-weight: 100;
+    }
+    #g_navi ul li.sml a { font-size: 2.5vw; color: var(--color-nav-link-sm); }
+
+    footer.fixed {
+      position: fixed; bottom: 0; left: 0; width: 100%;
+      background: var(--bg-footer-fixed); z-index: 300;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    body.sub_page footer, body.sub_page footer.fixed { background: transparent; }
+    footer {
+      margin: 0; background: var(--bg-footer); color: var(--color-footer);
+      padding: 10px; min-height: 100px; box-sizing: border-box;
+    }
+
+    @media screen and (max-width: 640px) {
+      #g_navi ul li a   { font-size: 7vw; }
+      #g_navi ul li.sml a { font-size: 6vw; }
+    }
+    @media screen and (min-width: 1200px) {
+      #g_navi ul li a   { font-size: 38px; }
+      #g_navi ul li.sml a { font-size: 30px; }
+    }
+
+    /* ============================================================
+       debug固有
+    ============================================================ */
+    .section {
+      height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      border-bottom: 1px solid #333;
+    }
+  </style>
+</head>
+<body class="sub_page default-category-bg">
+
+  <div id="bg-fixed" style="background-image: url('{{ debug_bg }}');"></div>
+  <div id="loading" class="loaded"></div>
+
+  <header>
+    <h1>PERSONAL WEB</h1>
+    <div class="bg_bl"></div>
+    <a class="menu_btn">
+      <span class="top"></span>
+      <span class="middle"></span>
+      <span class="bottom"></span>
+    </a>
+    <nav id="g_navi">
+      <ul>
+        <li class="sml"><a href="/">HOME</a></li>
+        <li class="sml"><a href="/debug">Debug</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <div class="section">
+      <img src="{{ debug_image }}" alt="debug 1" style="max-width:100%;max-height:100%;object-fit:contain;">
+    </div>
+    <div class="section">
+      <img src="{{ debug_image }}" alt="debug 2" style="max-width:100%;max-height:100%;object-fit:contain;">
+    </div>
+    <div class="section">
+      <img src="{{ debug_image }}" alt="debug 3" style="max-width:100%;max-height:100%;object-fit:contain;">
+    </div>
+  </main>
+
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+  <script type="module" src="/static/js/script.js"></script>
+
+</body>
+</html>

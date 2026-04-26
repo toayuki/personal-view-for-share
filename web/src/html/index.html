@@ -33,7 +33,7 @@
     </div>
   </div>
   <div class="image-container{{ '' if image_file_name else ' default-category-bg' }}">
-    <img class="image" src="{{ '/personal-web/categories/' + category_id + '/img/' + image_file_name if image_file_name else '' }}"{{ ' style="display:none;"' if not image_file_name }}>
+    <img class="image" src="{{ '/personal-web/categories/' + category_id + '/bg/' + image_file_name if image_file_name else '' }}"{{ ' style="display:none;"' if not image_file_name }}>
   </div>
 </div>
 {% endmacro %}
@@ -117,15 +117,13 @@
 {% endblock %}
 
 {% block script %}
-<script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+{{ super() }}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<!-- particle effect: uncomment to enable -->
 <script src="/static/js/particleEffect.js"></script>
 {% if categories %}
 <script src='https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.1/TweenMax.min.js'></script>
 <script src="/static/js/slider.js"></script>
 {% endif %}
-<script type="module" src="/static/js/script.js"></script>
 <script type="module" src="/static/js/categoryCreateModal.js"></script>
 <script type="module" src="/static/js/shareModal.js"></script>
 <script type="module" src="/static/js/categoryEditModal.js"></script>

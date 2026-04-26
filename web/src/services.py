@@ -84,27 +84,20 @@ def save_image_as_webp(
         image.save(path, "WEBP", quality=quality)
 
 
-def convert_mov_to_mp4(input_path:Path, output_path:Path):
-    """movファイルをmp4に変換する"""
+def convert_to_bg_mp4(input_path: Path, output_path: Path, max_seconds: int | None = None):
+    """任意の動画を MP4（ブラウザ互換）に変換する。max_seconds 指定時はその秒数で切り詰める"""
     cmd = [
         "ffmpeg",
-        "-y",  # 上書き
-        "-i",
-        str(input_path),  # 入力
-        "-c:v",
-        "libx264",  # 映像コーデック（ブラウザ互換）
-        "-pix_fmt",
-        "yuv420p",  # Safari / Chrome 対応
-        "-profile:v",
-        "high",
-        "-level",
-        "4.2",
-        "-movflags",
-        "+faststart",  # Web再生最適化
-        "-c:a",
-        "aac",  # 音声
-        "-b:a",
-        "128k",
+        "-y",
+        "-i", str(input_path),
+        *(["-t", str(max_seconds)] if max_seconds is not None else []),
+        "-c:v", "libx264",
+        "-pix_fmt", "yuv420p",
+        "-profile:v", "high",
+        "-level", "4.2",
+        "-movflags", "+faststart",
+        "-c:a", "aac",
+        "-b:a", "128k",
         str(output_path),
     ]
     subprocess.run(cmd, check=True)

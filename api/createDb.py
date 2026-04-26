@@ -42,6 +42,7 @@ CREATE TABLE categories (
     name VARCHAR NOT NULL,
     description TEXT,
     image_file_name TEXT,
+    video_file_name TEXT,
     created_by TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,

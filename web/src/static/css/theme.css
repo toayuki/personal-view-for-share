@@ -10,7 +10,7 @@
   --bg-body:          radial-gradient(circle farthest-corner at center, #223538 0%, #000305 100%);
   --bg-sub-page:      #0d1117;
   --bg-loading:       radial-gradient(circle farthest-corner at center, #223538 0%, #000305 100%);
-  --bg-nav:           rgba(0, 0, 0, 0.85);
+  --bg-nav:           rgba(0, 0, 0, 0.55);
   --bg-footer:        linear-gradient(-45deg, #150112, #001127, #000500, #012207);
   --bg-modal:         linear-gradient(160deg, #0a0f1a, #0d1520);
   --bg-overlay:       rgba(0, 0, 0, 0.75);
@@ -20,7 +20,7 @@
   --bg-header-fixed:  linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.05) 15%, rgba(0,0,0,0.2) 35%, rgba(0,0,0,0.5) 60%, rgba(0,0,0,0.75) 80%, rgba(0,0,0,0.8) 100%);
   --bg-footer-fixed:  linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.05) 15%, rgba(0,0,0,0.2) 35%, rgba(0,0,0,0.5) 60%, rgba(0,0,0,0.75) 80%, rgba(0,0,0,0.8) 100%);
   --bg-menu-block:    rgba(0, 0, 0, 0.75);
-  --bg-image-overlay: rgba(0, 0, 0, 0.85);
+  --bg-image-overlay: rgba(0, 0, 0, 0.4);
 
   /* テキスト */
   --color-body:       #ccc;
@@ -81,13 +81,12 @@
   --bg-body:          linear-gradient(135deg, #f5f5f5 0%, #fafafa 50%, #ffffff 100%);
   --bg-sub-page:      #ffffff;
   --bg-loading:       linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
-  --bg-nav:           rgba(255, 255, 255, 0.95);
+  --bg-nav:           rgba(255, 255, 255, 0.2);
   --bg-footer:        linear-gradient(-45deg, #e0e0e0, #e8e8e8, #ebebeb, #e5e5e5);
   --bg-modal:         linear-gradient(160deg, #ffffff, #f8f8f8);
   --bg-overlay:       rgba(200, 200, 200, 0.5);
-  --bg-slide-default: linear-gradient(135deg, #e8e8e8 0%, #f0f0f0 50%, #ffffff 100%);
-  /* index.htmlの背景が白すぎる場合は以下の第4引数を調整 */
-  --bg-slide-overlay: rgba(200, 200, 200, 0.5);
+  --bg-slide-default: linear-gradient(135deg, #f5f5f5 0%, #fafafa 50%, #ffffff 100%);
+  --bg-slide-overlay: rgba(200, 200, 200, 0.15);
   --bg-slide-intro:   rgba(255, 255, 255, 0.4); 
   --bg-header-fixed:  linear-gradient(0deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 15%, rgba(255,255,255,0.2) 35%, rgba(255,255,255,0.55) 60%, rgba(255,255,255,0.8) 80%, rgba(255,255,255,0.9) 100%);
   --bg-footer-fixed:  linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 15%, rgba(255,255,255,0.2) 35%, rgba(255,255,255,0.55) 60%, rgba(255,255,255,0.8) 80%, rgba(255,255,255,0.9) 100%);

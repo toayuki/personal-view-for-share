@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title_name }}{% endblock %}
+
+{% block body_extra_class %}{% if not (category_image and category_id) %}default-category-bg{% endif %}{% endblock %}
+
+{% block bg_fixed_style %}{% if category_image and category_id %} style="background-image: linear-gradient(var(--bg-image-overlay), var(--bg-image-overlay)), url('/personal-web/categories/{{ category_id }}/bg/{{ category_image }}')"{% endif %}{% endblock %}
+
+{% block bg_media %}
+{% if category_video and category_id %}
+<div id="bg-video-overlay"></div>
+<div id="bg-video-fade"></div>
+<video id="bg-video" autoplay muted playsinline>
+  <source src="/personal-web/categories/{{ category_id }}/bg/{{ category_video }}">
+</video>
+<script>
+  // 再生成功時は背景画像を非表示、失敗時（省電力モード等）は動画を非表示にして背景画像にフォールバック
+  (function() {
+    var v = document.getElementById('bg-video');
+    if (!v) return;
+    var fade = document.getElementById('bg-video-fade');
+    var fadeDuration = 0.8;
+    var fading = false;
+
+    v.addEventListener('timeupdate', function() {
+      if (!v.duration || fading) return;
+      var remaining = v.duration - v.currentTime;
+      if (remaining <= fadeDuration) {
+        fading = true;
+        fade.style.transition = 'opacity ' + remaining + 's linear';
+        fade.style.opacity = '1';
+      }
+    });
+
+    v.addEventListener('ended', function() {
+      v.currentTime = 0;
+      v.play();
+    });
+
+    v.addEventListener('playing', function() {
+      setTimeout(function() {
+        fade.style.transition = 'opacity ' + fadeDuration + 's linear';
+        fade.style.opacity = '0';
+        fading = false;
+      }, 500);
+    });
+
+    var p = v.play();
+    if (p !== undefined) {
+      p.then(function() {
+        document.getElementById('bg-fixed').style.backgroundImage = 'none';
+      }).catch(function() {
+        v.style.display = 'none';
+        fade.style.display = 'none';
+        document.getElementById('bg-video-overlay').style.display = 'none';
+      });
+    }
+  })();
+</script>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<h3>{{ category_name }}</h3>
+<label for="fileUpload" class="file-link">upload</label>
+<label id="optionsBtn" class="file-link">options</label>
+<label id="selectAllBtn" class="file-link">select all</label>
+<input type="file" id="fileUpload" name="file" multiple style="display:none;">
+<div class="wrapper">
+  <ul class="grid js-anim" id="result" data-category-id="{{ category_id }}"></ul>
+</div>
+{% endblock %}

@@ -25,6 +25,14 @@ function initEditModal() {
         </label>
         <input id="edit-category-image" type="file" accept="image/*" style="display:none;">
       </div>
+      <div class="edit-fields">
+        <label class="edit-label">背景動画（任意）</label>
+        <label class="category-img-upload-label" for="edit-category-bg-video">
+          <span id="edit-category-video-placeholder"><i class="fa-solid fa-film"></i> 動画を選択</span>
+          <video id="edit-category-video-preview" style="display:none;width:100%;height:100%;object-fit:cover;" muted playsinline></video>
+        </label>
+        <input id="edit-category-bg-video" type="file" accept="video/*" style="display:none;">
+      </div>
     `,
   });
 
@@ -37,6 +45,7 @@ function initEditModal() {
   editModalEl.querySelector('.btn.save').addEventListener('click', saveEditModal);
   editModalEl.querySelector('.btn.delete-action').addEventListener('click', onDeleteClick);
   editModalEl.querySelector('#edit-category-image').addEventListener('change', onImageSelected);
+  editModalEl.querySelector('#edit-category-bg-video').addEventListener('change', onVideoSelected);
 
   let savedScrollY = 0;
   editModalEl.querySelectorAll('input').forEach(input => {
@@ -59,6 +68,16 @@ function onImageSelected(e) {
   reader.readAsDataURL(file);
 }
 
+function onVideoSelected(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const preview = editModalEl.querySelector('#edit-category-video-preview');
+  const placeholder = editModalEl.querySelector('#edit-category-video-placeholder');
+  preview.src = URL.createObjectURL(file);
+  preview.style.display = 'block';
+  placeholder.style.display = 'none';
+}
+
 function openEditModal({ categoryId, name, description, imageFileName }) {
   if (!editModalEl) initEditModal();
   currentCategoryId = categoryId;
@@ -69,7 +88,7 @@ function openEditModal({ categoryId, name, description, imageFileName }) {
   const preview = editModalEl.querySelector('#edit-category-img-preview');
   const placeholder = editModalEl.querySelector('#edit-category-img-placeholder');
   if (imageFileName) {
-    preview.src = `/personal-web/categories/${categoryId}/img/${imageFileName}`;
+    preview.src = `/personal-web/categories/${categoryId}/bg/${imageFileName}`;
     preview.style.display = 'block';
     placeholder.style.display = 'none';
   } else {
@@ -90,12 +109,18 @@ function closeEditModal() {
   editModalEl.classList.remove('modal-open');
   currentCategoryId = null;
   editModalEl.querySelector('#edit-category-image').value = '';
+  const videoPreview = editModalEl.querySelector('#edit-category-video-preview');
+  videoPreview.src = '';
+  videoPreview.style.display = 'none';
+  editModalEl.querySelector('#edit-category-video-placeholder').style.display = '';
+  editModalEl.querySelector('#edit-category-bg-video').value = '';
 }
 
 async function saveEditModal() {
   const nameEl = editModalEl.querySelector('#edit-category-name');
   const descEl = editModalEl.querySelector('#edit-category-description');
   const imageEl = editModalEl.querySelector('#edit-category-image');
+  const videoEl = editModalEl.querySelector('#edit-category-bg-video');
   const errEl = editModalEl.querySelector('.modal-error');
 
   const name = nameEl.value.trim();
@@ -106,10 +131,20 @@ async function saveEditModal() {
     return;
   }
 
+  // TODO: Cloudflare Tunnelの100MB上限を回避するためチャンク分割アップロードに変更する
+  const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+  if (videoEl.files[0] && videoEl.files[0].size > MAX_VIDEO_BYTES) {
+    errEl.textContent = '動画ファイルが大きすぎます（上限100MB）。短い動画を選択してください。※今後この制限は撤廃予定です。';
+    errEl.style.display = 'block';
+    return;
+  }
+
   const formData = new FormData();
   formData.append('name', name);
   formData.append('description', description);
+  // files[0] はメタ情報＋ファイルシステム参照のみ。バイナリはまだメモリに載らない
   if (imageEl.files[0]) formData.append('image', imageEl.files[0]);
+  if (videoEl.files[0]) formData.append('video', videoEl.files[0]);
 
   const res = await fetch(`/categories/${currentCategoryId}`, { method: 'PATCH', body: formData });
   if (!res.ok) {
@@ -128,7 +163,7 @@ async function saveEditModal() {
 
     if (data.image_file_name) {
       const img = slide.querySelector('.image');
-      img.src = `/personal-web/categories/${currentCategoryId}/img/${data.image_file_name}`;
+      img.src = `/personal-web/categories/${currentCategoryId}/bg/${data.image_file_name}`;
       img.style.display = '';
       slide.querySelector('.image-container').classList.remove('default-category-bg');
     }

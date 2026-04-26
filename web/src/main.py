@@ -25,7 +25,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from src import audit_logger, create_thumbnail
-from src.services import convert_to_hls, save_image_as_webp, create_random_file_name, get_file_type
+from src.services import convert_to_bg_mp4, convert_to_hls, save_image_as_webp, create_random_file_name, get_file_type
 
 load_dotenv()
 BASE_DIR = Path(os.getenv("CONTENTS_SAVE_DIR", ""))
@@ -47,13 +47,12 @@ invite_tokens: dict[str, dict] = {}
 
 app = FastAPI()
 
-is_debug_mode = True
 
 # 有効なセッショントークンを管理するメモリストア
 # {token: {"user_id": int, "role": str, "viewable_category_ids": list[str] | None}}
 active_sessions: dict[str, dict] = {}
 
-_PUBLIC_PATHS = {"/login", "/signup", "/signup/details", "/signup/complete", "/invite", "/invite/accept", "/favicon.ico"}
+_PUBLIC_PATHS = {"/login", "/signup", "/signup/details", "/signup/complete", "/invite", "/invite/accept", "/forgot-password", "/reset-password", "/favicon.ico"}
 
 
 def _get_user_categories(session: dict) -> list:
@@ -153,8 +152,8 @@ async def login_page(request: Request, invite: str = ""):
 @app.post("/login", response_class=HTMLResponse)
 async def login_post(
     request: Request,
-    username: str = Form(...),
-    password: str = Form(...),
+    username: str = Form(""),
+    password: str = Form(""),
     invite: str = Form(""),
 ):
     ip = audit_logger.get_client_ip(request)
@@ -165,6 +164,8 @@ async def login_post(
         referer=request.headers.get("referer", "-"),
         accept_language=request.headers.get("accept-language", "-"),
     )
+    if not username.strip() or not password.strip():
+        return html.TemplateResponse("login.html", {"request": request, "error_msg": "ユーザー名とパスワードを入力してください", "invite": invite})
     res = requests.post(f"{API_URL}/login/verify", json={"username": username, "password": password}, timeout=10)
     if res.status_code == 200:
         data = res.json()
@@ -183,7 +184,68 @@ async def login_post(
         response.set_cookie("session", token, httponly=True, samesite="lax", max_age=86400 * 180)
         return response
     audit_logger.log_login_access(event="attempt_failed", **common)
-    return html.TemplateResponse("login.html", {"request": request, "error": True})
+    return html.TemplateResponse("login.html", {"request": request, "error_msg": "ユーザー名またはパスワードが正しくありません", "invite": invite})
+
+
+@app.get("/forgot-password", response_class=HTMLResponse)
+async def forgot_password_page(request: Request):
+    return html.TemplateResponse("forgot_password.html", {"request": request})
+
+
+@app.post("/forgot-password", response_class=HTMLResponse)
+async def forgot_password_post(request: Request, email: str = Form("")):
+    if not email.strip():
+        return html.TemplateResponse("forgot_password.html", {"request": request, "error_msg": "メールアドレスを入力してください"})
+    res = requests.post(f"{API_URL}/password-reset/request", json={"email": email.strip()}, timeout=10)
+    if res.status_code == 404:
+        return html.TemplateResponse("forgot_password.html", {"request": request, "error_msg": "このメールアドレスは登録されていません"})
+    if res.status_code != 200:
+        return html.TemplateResponse("forgot_password.html", {"request": request, "error_msg": "エラーが発生しました。しばらくしてから再試行してください"})
+    token = res.json().get("token")
+    origin = request.headers.get("origin", str(request.base_url).rstrip("/"))
+    reset_url = f"{origin}/reset-password?token={token}"
+    try:
+        msg = MIMEText(
+            f"以下のリンクからパスワードを変更してください（1時間有効）\n\n{reset_url}",
+            "plain",
+            "utf-8",
+        )
+        msg["Subject"] = "【PERSONAL WEB】パスワード再設定"
+        msg["From"] = SMTP_USER
+        msg["To"] = email.strip()
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASSWORD)
+            server.send_message(msg)
+    except Exception as e:
+        print(f"メール送信エラー: {e}")
+        return html.TemplateResponse("forgot_password.html", {"request": request, "error_msg": "メール送信に失敗しました。しばらくしてから再試行してください"})
+    return html.TemplateResponse("forgot_password.html", {"request": request, "sent": True})
+
+
+@app.get("/reset-password", response_class=HTMLResponse)
+async def reset_password_page(request: Request, token: str = ""):
+    if not token:
+        return html.TemplateResponse("reset_password.html", {"request": request, "invalid": True})
+    return html.TemplateResponse("reset_password.html", {"request": request, "token": token})
+
+
+@app.post("/reset-password", response_class=HTMLResponse)
+async def reset_password_post(request: Request, token: str = Form(""), password: str = Form(""), password_confirm: str = Form("")):
+    if not token:
+        return html.TemplateResponse("reset_password.html", {"request": request, "invalid": True})
+    if not password.strip():
+        return html.TemplateResponse("reset_password.html", {"request": request, "token": token, "error_msg": "パスワードを入力してください"})
+    if password != password_confirm:
+        return html.TemplateResponse("reset_password.html", {"request": request, "token": token, "error_msg": "パスワードが一致しません"})
+    res = requests.post(f"{API_URL}/password-reset/complete", json={"token": token, "password": password}, timeout=10)
+    if res.status_code == 400:
+        detail = res.json().get("error", "")
+        msg = "リンクの有効期限が切れています。再度手続きをしてください" if "expired" in detail else "無効なリンクです"
+        return html.TemplateResponse("reset_password.html", {"request": request, "invalid": True, "error_msg": msg})
+    if res.status_code != 200:
+        return html.TemplateResponse("reset_password.html", {"request": request, "token": token, "error_msg": "エラーが発生しました。しばらくしてから再試行してください"})
+    return html.TemplateResponse("reset_password.html", {"request": request, "done": True})
 
 
 @app.get("/signup", response_class=HTMLResponse)
@@ -312,7 +374,7 @@ def invite_preview_image(token: str):
         if res.status_code == 200:
             cat = res.json().get("category")
             if cat and cat.get("image_file_name"):
-                file_path = BASE_DIR / category_id / "images" / cat["image_file_name"]
+                file_path = BASE_DIR / category_id / "bg" / cat["image_file_name"]
                 if file_path.exists():
                     return FileResponse(file_path)
     except Exception:
@@ -400,10 +462,10 @@ async def read_root(request: Request):
     return html.TemplateResponse("index.html", context)
 
 
-@app.get("/personal-web/categories/{category_id}/img/{file_name}")
-def get_category_img(category_id: str, file_name: str):
-    """カテゴリ画像を返す"""
-    file_path = BASE_DIR / category_id / "images" / file_name
+@app.get("/personal-web/categories/{category_id}/bg/{file_name}")
+def get_category_bg(category_id: str, file_name: str):
+    """カテゴリ背景画像・動画を返す"""
+    file_path = BASE_DIR / category_id / "bg" / file_name
     return FileResponse(file_path)
 
 
@@ -413,8 +475,9 @@ async def create_category(
     name: str = Form(...),
     description: str = Form(""),
     image: UploadFile = File(None),
+    video: UploadFile = File(None),
 ):
-    """カテゴリ登録（画像オプション）をAPIに委譲する"""
+    """カテゴリ登録（画像・動画オプション）をAPIに委譲する"""
     token = request.cookies.get("session")
     user_id = active_sessions.get(token, {}).get("user_id")
     # 1. カテゴリ登録（画像なし）→ category_id を取得
@@ -429,19 +492,38 @@ async def create_category(
     category_id = res.json()["id"]
 
     # 2. ディレクトリ作成
-    for sub in ("images", "originals", "thumbnails", "videos"):
+    for sub in ("images", "originals", "thumbnails", "videos", "bg"):
         (BASE_DIR / category_id / sub).mkdir(parents=True, exist_ok=True)
 
-    # 3. 画像があれば category_id/images/ に保存し、API を PATCH で更新
+    # 3. 画像があれば保存
     image_file_name = None
     if image and image.filename:
         ext = Path(image.filename).suffix.lower()
         content = await image.read()
         image_file_name = create_random_file_name(20) + ".webp"
-        save_image_as_webp(content, ext, BASE_DIR / category_id / "images" / image_file_name, max_px=1000, max_kb=150)
+        save_image_as_webp(content, ext, BASE_DIR / category_id / "bg" / image_file_name, max_px=1000, max_kb=150)
         requests.patch(
             f"{API_URL}/categories/{category_id}",
             json={"image_file_name": image_file_name},
+            timeout=10,
+        )
+
+    # 4. 背景動画があれば保存
+    video_file_name = None
+    if video and video.filename:
+        ext = Path(video.filename).suffix.lower()
+        video_file_name = create_random_file_name(20) + ".mp4"
+        video_content = await video.read()
+        tmp_path = BASE_DIR / category_id / "bg" / (create_random_file_name(10) + ext)
+        tmp_path.write_bytes(video_content)
+        out_path = BASE_DIR / category_id / "bg" / video_file_name
+        def _convert_bg(tmp=tmp_path, out=out_path):
+            convert_to_bg_mp4(tmp, out, 60)
+            tmp.unlink()
+        _conversion_executor.submit(_convert_bg)
+        requests.patch(
+            f"{API_URL}/categories/{category_id}",
+            json={"video_file_name": video_file_name},
             timeout=10,
         )
 
@@ -453,6 +535,8 @@ async def create_category(
     result = {"ok": True, "id": category_id}
     if image_file_name:
         result["image_file_name"] = image_file_name
+    if video_file_name:
+        result["video_file_name"] = video_file_name
     return Response(content=json.dumps(result), status_code=200, media_type="application/json")
 
 
@@ -463,6 +547,7 @@ async def update_category(
     name: str = Form(...),
     description: str = Form(""),
     image: UploadFile = File(None),
+    video: UploadFile = File(None),
 ):
     """カテゴリ更新（admin または作成者のみ）"""
     token = request.cookies.get("session")
@@ -492,14 +577,33 @@ async def update_category(
         ext = Path(image.filename).suffix.lower()
         content = await image.read()
         image_file_name = create_random_file_name(20) + ".webp"
-        (BASE_DIR / category_id / "images").mkdir(parents=True, exist_ok=True)
-        save_image_as_webp(content, ext, BASE_DIR / category_id / "images" / image_file_name, max_px=1000, max_kb=150)
+        (BASE_DIR / category_id / "bg").mkdir(parents=True, exist_ok=True)
+        save_image_as_webp(content, ext, BASE_DIR / category_id / "bg" / image_file_name, max_px=1000, max_kb=150)
         requests.patch(
             f"{API_URL}/categories/{category_id}",
             json={"image_file_name": image_file_name},
             timeout=10,
         )
         result["image_file_name"] = image_file_name
+
+    if video and video.filename:
+        ext = Path(video.filename).suffix.lower()
+        video_file_name = create_random_file_name(20) + ".mp4"
+        (BASE_DIR / category_id / "bg").mkdir(parents=True, exist_ok=True)
+        video_content = await video.read()
+        tmp_path = BASE_DIR / category_id / "bg" / (create_random_file_name(10) + ext)
+        tmp_path.write_bytes(video_content)
+        out_path = BASE_DIR / category_id / "bg" / video_file_name
+        def _convert_bg(tmp=tmp_path, out=out_path):
+            convert_to_bg_mp4(tmp, out, 60)
+            tmp.unlink()
+        _conversion_executor.submit(_convert_bg)
+        requests.patch(
+            f"{API_URL}/categories/{category_id}",
+            json={"video_file_name": video_file_name},
+            timeout=10,
+        )
+        result["video_file_name"] = video_file_name
 
     return Response(content=json.dumps(result), status_code=200, media_type="application/json")
 
@@ -641,6 +745,7 @@ async def category_page(request: Request, category_id: str):
     _check_category_access(request, category_id)
     category_name = None
     category_image = None
+    category_video = None
     try:
         res = requests.get(f"{API_URL}/categories/{category_id}", timeout=10)
         if res.status_code == 200:
@@ -648,6 +753,7 @@ async def category_page(request: Request, category_id: str):
             if category:
                 category_name = category.get("name")
                 category_image = category.get("image_file_name")
+                category_video = category.get("video_file_name")
     except Exception:
         pass
 
@@ -660,11 +766,12 @@ async def category_page(request: Request, category_id: str):
         "category_name": category_name,
         "title_name": f"PERSONAL - {category_name}",
         "category_image": category_image,
+        "category_video": category_video,
         "categories": _get_user_categories(session_user),
         "category_id": category_id,
         "role": role,
     }
-    return html.TemplateResponse("base.html", context)
+    return html.TemplateResponse("category.html", context)
 
 @app.get("/download/{content_id}")
 def download_original(request: Request, content_id: str):
@@ -886,3 +993,25 @@ def force_delete(target_id: str):
 
     requests.post(f"{API_URL}/delete/{target_id}", timeout=10)
     return {"ok": True}
+
+
+# --- Debug ---
+is_debug_mode = True
+
+app.mount(path="/debug-assets", app=StaticFiles(directory=BASE_DIR / "debug"), name="debug-assets")
+
+@app.get("/debug", response_class=HTMLResponse)
+async def debug_page(request: Request):
+    if not is_debug_mode:
+        return HTMLResponse(status_code=404)
+    token = request.cookies.get("session")
+    session_user = active_sessions.get(token, {})
+    debug_dir = BASE_DIR / "debug"
+    context = {
+        "request": request,
+        "role": session_user.get("role", "user"),
+        "categories": _get_user_categories(session_user),
+        "debug_image": "/debug-assets/debug.jpg" if (debug_dir / "debug.jpg").exists() else None,
+        "debug_bg": "/debug-assets/bg.jpg" if (debug_dir / "bg.jpg").exists() else None,
+    }
+    return html.TemplateResponse("debug.html", context)

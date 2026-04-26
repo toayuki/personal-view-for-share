@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}PERSONAL WEB{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="/static/img/favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon.png">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans%3A400%2C400italic%2C600%2C700%7COswald%3A400%2C300">
+  <link rel="stylesheet" href="/static/css/theme.css">
+  <link rel="stylesheet" href="/static/css/login.css">
+  {% block extra_css %}{% endblock %}
+  <script>
+    (function() {
+      const t = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  {% block page_style %}{% endblock %}
+</head>
+<body>
+  {% block content %}{% endblock %}
+  <button id="theme-toggle" title="テーマ切り替え"></button>
+  <script>
+    (function() {
+      const btn = document.getElementById('theme-toggle');
+      btn.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀' : '🌙';
+      btn.addEventListener('click', function() {
+        const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', t);
+        btn.textContent = t === 'dark' ? '☀' : '🌙';
+        localStorage.setItem('theme', t);
+      });
+    })();
+  </script>
+  {% block script %}{% endblock %}
+</body>
+</html>

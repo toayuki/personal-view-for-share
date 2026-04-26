@@ -1,8 +1,9 @@
 (function () {
   let items = [];
   let currentIndex = 0;
-  let hlsInstance = null;
+  let hlsInstance = null; // HLS.js インスタンス（画面遷移時に破棄が必要）
 
+  // オーバーレイ・UI要素を生成して body に追加
   const overlay = document.createElement("div");
   overlay.id = "lb-overlay";
 
@@ -34,7 +35,7 @@
     currentIndex = index;
     render();
     overlay.classList.add("lb-open");
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow = "hidden"; // 背景スクロールを抑制
   }
 
   function close() {
@@ -59,7 +60,9 @@
       const video = document.createElement("video");
       video.controls = true;
       video.autoplay = true;
+      video.setAttribute("playsinline", ""); // iOS Safari でネイティブプレイヤーを開かずインライン再生
       if (item.href.endsWith(".m3u8")) {
+        // HLS: ブラウザが非対応なら HLS.js を使用、Safari は Native HLS で再生
         if (typeof Hls !== "undefined" && Hls.isSupported()) {
           hlsInstance = new Hls();
           hlsInstance.loadSource(item.href);
@@ -77,6 +80,7 @@
       content.appendChild(img);
     }
 
+    // 端のアイテムでは前後ボタンを非表示
     prevBtn.style.visibility = currentIndex === 0 ? "hidden" : "visible";
     nextBtn.style.visibility = currentIndex === items.length - 1 ? "hidden" : "visible";
   }
@@ -91,6 +95,7 @@
 
   closeBtn.addEventListener("click", close);
 
+  // オーバーレイ背景クリックで閉じる
   overlay.addEventListener("click", function (e) {
     if (e.target === overlay) close();
   });
@@ -105,6 +110,7 @@
     next();
   });
 
+  // キーボード操作
   document.addEventListener("keydown", function (e) {
     if (!overlay.classList.contains("lb-open")) return;
     if (e.key === "Escape") close();
@@ -112,6 +118,7 @@
     if (e.key === "ArrowRight") next();
   });
 
+  // data-fancybox 属性を持つリンクのクリックをインターセプト
   document.addEventListener("click", function (e) {
     if (document.body.classList.contains("edit-mode")) return;
     const a = e.target.closest("a[data-fancybox]");

@@ -147,7 +147,7 @@ function addCategorySlide(id, name, description, imageFileName) {
   const imageContainer = slide.querySelector('.image-container');
   if (imageFileName) {
     const img = slide.querySelector('.image');
-    img.src = `/personal-web/categories/${id}/img/${imageFileName}`;
+    img.src = `/personal-web/categories/${id}/bg/${imageFileName}`;
     img.style.display = '';
     imageContainer.classList.remove('default-category-bg');
   }

@@ -1,24 +1,8 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <title>PERSONAL WEB - Login</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="/static/img/favicon.ico">
-  <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
-  <link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon.png">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans%3A400%2C400italic%2C600%2C700%7COswald%3A400%2C300">
-  <link rel="stylesheet" href="/static/css/theme.css">
-  <link rel="stylesheet" href="/static/css/login.css">
-  <script>
-    // ページ描画前にテーマを適用してフラッシュを防ぐ
-    (function() {
-      const t = localStorage.getItem('theme') || 'light';
-      document.documentElement.setAttribute('data-theme', t);
-    })();
-  </script>
-</head>
-<body>
+{% extends "base_login.html" %}
+
+{% block title %}PERSONAL WEB - Login{% endblock %}
+
+{% block content %}
   <div class="login-box">
     <p class="login-title">Personal Web</p>
     <form method="post" action="/login">
@@ -34,26 +18,12 @@
         <label for="password">Password</label>
         <input type="password" id="password" name="password" autocomplete="current-password">
       </div>
-      {% if error %}
-      <p class="error-msg">Invalid credentials</p>
+      {% if error_msg %}
+      <p class="error-msg">{{ error_msg }}</p>
       {% endif %}
       <button type="submit">Enter</button>
     </form>
     <a href="/signup" class="sub-link">新規会員登録</a>
+    <a href="/forgot-password" class="sub-link">パスワードを忘れた場合</a>
   </div>
-  <button id="theme-toggle" title="テーマ切り替え"></button>
-  <script>
-    (function() {
-      const btn = document.getElementById('theme-toggle');
-      // data-theme は <head> スクリプト済みなのでボタン表示のみ同期
-      btn.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀' : '🌙';
-      btn.addEventListener('click', function() {
-        const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', t);
-        btn.textContent = t === 'dark' ? '☀' : '🌙';
-        localStorage.setItem('theme', t);
-      });
-    })();
-  </script>
-</body>
-</html>
+{% endblock %}

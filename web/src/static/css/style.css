@@ -150,11 +150,45 @@ header h2 {
 
 body.sub_page {
 	width: 100%;
-	height: 100vh;
+	min-height: 100vh;
+	background: transparent;
+	position: relative;
+}
+
+#bg-fixed {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100lvw;
+	height: var(--screen-height, 100lvh); /* iOS Safari の物理スクリーン高（アドレスバー含む） */
+	z-index: -1;
 	background-color: var(--bg-sub-page);
 	background-size: cover;
 	background-position: center;
-	position: relative;
+}
+
+#bg-video {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+#bg-video-overlay {
+	position: absolute;
+	inset: 0;
+	background: var(--bg-image-overlay);
+	z-index: 1;
+}
+
+#bg-video-fade {
+	position: absolute;
+	inset: 0;
+	background: var(--bg-body-color);
+	opacity: 0;
+	z-index: 2;
+	pointer-events: none;
 }
 
 a img {
@@ -185,6 +219,7 @@ header {
 	-webkit-transition: all 0.3s ease;
 	-moz-transition: all 0.3s ease;
 	-o-transition: all 0.3s ease;
+	top: 0;
 }
 
 header.fixed {
@@ -380,6 +415,42 @@ body.sub_page main p a {
 	justify-content: center;
 	min-height: 100%;
 	list-style: none;
+}
+
+#g_navi ul li {
+	opacity: 0;
+}
+
+#g_navi.nav-open ul li {
+	animation: menuItemSlideIn 0.25s both;
+	animation-delay: var(--item-delay, 0s);
+}
+
+#g_navi.nav-close ul li {
+	animation: menuItemSlideOut 0.25s both;
+	animation-delay: var(--item-delay, 0s);
+}
+
+@keyframes menuItemSlideIn {
+	from {
+		opacity: 0;
+		transform: translateX(var(--slide-from, -40px));
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+@keyframes menuItemSlideOut {
+	from {
+		opacity: 1;
+		transform: translateX(0);
+	}
+	to {
+		opacity: 0;
+		transform: translateX(var(--slide-from, -40px));
+	}
 }
 
 
@@ -690,6 +761,11 @@ footer.fixed {
 	padding-bottom: env(safe-area-inset-bottom);
 }
 
+body.sub_page footer,
+body.sub_page footer.fixed {
+	background: transparent;
+}
+
 footer {
 	margin: 0;
 	background: var(--bg-footer);
@@ -839,6 +915,8 @@ body.edit-mode #selectAllBtn {
 .modal {
   width: 380px;
   max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
   box-sizing: border-box;
   padding: 40px;
   background: var(--bg-modal);
@@ -1008,12 +1086,12 @@ body.edit-mode #selectAllBtn {
 }
 
 .btn.cancel {
-  color: #fff;
+  color: #999;
   border: 1px solid #999;
 }
 
 .btn.cancel:hover {
-  color: #fff;
+  color: #999;
   border-color: #999;
 }
 

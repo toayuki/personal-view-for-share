@@ -2,27 +2,49 @@ import { openConfirmModal } from "./modal.js";
 import { onOpenEdit } from "./contentsEditModal.js";
 import { createGridItem, startConversionPolling, addConvertingOverlay } from "./getList.js";
 
-//Gメニュー
+// グローバルナビ関連
 var bnrBtn = $('#g_navi');
 var $header = $('header');
 var $footer = $('footer');
-var scrollpos;
+var scrollpos; // メニューを開く直前のスクロール位置（閉じたときに復元）
+var ttt = false; // メニュー開閉状態フラグ
 
 $('.bg_bl').hide();
 
-var ttt = false;
-
 $(function () {
   $(".menu_btn").on("click", function () {
+    var $items = $('#g_navi ul li');
+    var total = $items.length;
     if (ttt == false) {
-      bnrBtn.stop().fadeIn();
-      $('.bg_bl').fadeIn();
+      bnrBtn.addClass('nav-open')
+      // メニューを開く: 各 li にアニメーション用 CSS 変数をセット（上から順にずらして表示）
+      $items.each(function(index) {
+        this.style.setProperty('--item-delay', (index * 0.04) + 's');
+        this.style.setProperty('--slide-from', -(40 + index * 25) + 'px');
+      });
+      var openDuration = ((total - 1) * 0.04 + 0.25) * 1000;
+      bnrBtn.removeClass('nav-close');
+      // bnrBtn[0].offsetHeight; // リフローを強制してトランジションを確実に発火
+      bnrBtn.stop().fadeIn(openDuration);
+      $('.bg_bl').stop().fadeIn(openDuration);
+      $footer.hide();
       scrollpos = $(window).scrollTop();
       $(".menu_btn").addClass('opened');
       ttt = true;
     } else {
-      bnrBtn.stop().fadeOut();
-      $('.bg_bl').fadeOut();
+      // メニューを閉じる: 逆順の遅延で li を上に戻す
+      $items.each(function(index) {
+        this.style.setProperty('--item-delay', ((total - 1 - index) * 0.04) + 's');
+      });
+      var closeDuration = ((total - 1) * 0.04 + 0.25) * 1000;
+      bnrBtn.removeClass('nav-open');
+      // bnrBtn[0].offsetHeight; // リフローを強制してトランジションを確実に発火
+      bnrBtn.addClass('nav-close');
+      bnrBtn.stop().fadeOut(closeDuration, function() {
+        bnrBtn.removeClass('nav-close');
+      });
+      $('.bg_bl').stop().fadeOut(closeDuration);
+      $footer.show();
       $(".menu_btn").removeClass('opened');
       window.scrollTo(0, scrollpos);
       ttt = false;
@@ -45,7 +67,6 @@ if (document.querySelector('.slideshow')) {
     }
   });
 }
-
 
 
 // ローディング処理
@@ -74,6 +95,7 @@ document.getElementById('fileUpload')?.addEventListener('change', async (e) => {
   spinner.classList.remove('loaded');
 
   const categoryId = document.getElementById('result')?.dataset.categoryId ?? '';
+  // 複数ファイルの場合は動画変換を後でまとめて開始（defer）
   const defer = files.length > 1;
   const pendingVideoNames = [];
 
@@ -122,6 +144,7 @@ document.getElementById('fileUpload')?.addEventListener('change', async (e) => {
     }).catch(() => {});
   }
 
+  // defer した動画をまとめて変換開始
   if (pendingVideoNames.length > 0) {
     await fetch('/start-conversion', {
       method: 'POST',
@@ -140,6 +163,7 @@ function getSelectedItems() {
   return Array.from(document.querySelectorAll(".grid-item.selected"));
 }
 
+// edit-mode の切り替え（選択モード）
 if (optionsBtn) {
   optionsBtn.addEventListener("click", () => {
     const isEditMode = document.body.classList.toggle("edit-mode");
@@ -150,6 +174,7 @@ if (optionsBtn) {
   });
 }
 
+// 全選択 / 全解除トグル
 const selectAllBtn = document.getElementById("selectAllBtn");
 if (selectAllBtn) {
   selectAllBtn.addEventListener("click", () => {
@@ -159,6 +184,7 @@ if (selectAllBtn) {
   });
 }
 
+// グリッドアイテムの操作（削除・強制削除・編集・選択）を一括でイベント委譲
 document.addEventListener("click", async (e) => {
   const deleteLink = e.target.closest(".delete-link");
   if (deleteLink) {
@@ -166,6 +192,7 @@ document.addEventListener("click", async (e) => {
     const isEditMode = document.body.classList.contains("edit-mode");
     const selectedItems = getSelectedItems();
     if (isEditMode && selectedItems.length > 0) {
+      // edit-mode 中: クリックしたアイテムも選択に含めてまとめて削除
       const clickedItem = deleteLink.closest(".grid-item");
       if (clickedItem && !clickedItem.classList.contains("selected")) {
         clickedItem.classList.add("selected");
@@ -202,6 +229,7 @@ document.addEventListener("click", async (e) => {
     }
   }
 
+  // ファイルを含む完全削除（DBレコード + ストレージ）
   const forceDeleteLink = e.target.closest(".force-delete-link");
   if (forceDeleteLink) {
     e.preventDefault();
@@ -266,6 +294,7 @@ document.addEventListener("click", async (e) => {
     });
   }
 
+  // edit-mode 中はサムネイルクリックでライトボックスを開かず選択トグル
   if (document.body.classList.contains("edit-mode")) {
     const isOptionLink = e.target.closest(".delete-link, .force-delete-link, .edit-link, .download-link");
     if (!isOptionLink) {

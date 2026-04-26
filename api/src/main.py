@@ -3,6 +3,7 @@ import json
 import secrets
 import sqlite3
 import string
+from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
 from fastapi import Body, FastAPI
@@ -210,6 +211,9 @@ def update_category(category_id: str, data: dict = Body(...)):
     if "image_file_name" in data:
         updates.append("image_file_name=?")
         values.append(data["image_file_name"])
+    if "video_file_name" in data:
+        updates.append("video_file_name=?")
+        values.append(data["video_file_name"])
     if not updates:
         conn.close()
         return {"ok": True}
@@ -241,7 +245,7 @@ def get_category(category_id: str):
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
     cur.execute(
-        "SELECT id, name, description, image_file_name, created_by FROM categories WHERE id=? AND deleted_at IS NULL",
+        "SELECT id, name, description, image_file_name, video_file_name, created_by FROM categories WHERE id=? AND deleted_at IS NULL",
         (category_id,),
     )
     row = cur.fetchone()
@@ -255,7 +259,7 @@ def list_categories():
     conn = sqlite3.connect("main.db")
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
-    cur.execute("SELECT id, name, description, image_file_name, created_by FROM categories WHERE deleted_at IS NULL ORDER BY created_at")
+    cur.execute("SELECT id, name, description, image_file_name, video_file_name, created_by FROM categories WHERE deleted_at IS NULL ORDER BY created_at")
     rows = cur.fetchall()
     conn.close()
     return {"categories": [dict(row) for row in rows]}
@@ -327,6 +331,64 @@ def create_user(data: dict = Body(...)):
         return JSONResponse(status_code=409, content={"error": "username or email already exists"})
     conn.close()
     return {"ok": True, "user_id": user_id}
+
+
+@app.post("/password-reset/request")
+def password_reset_request(data: dict = Body(...)):
+    """メールアドレスからパスワードリセットトークンを発行する"""
+    email = data.get("email", "").strip()
+    if not email:
+        return JSONResponse(status_code=400, content={"error": "email is required"})
+    conn = sqlite3.connect("main.db")
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    cur.execute("SELECT id FROM users WHERE email_address=? AND deleted_at IS NULL", (email,))
+    row = cur.fetchone()
+    if not row:
+        conn.close()
+        return JSONResponse(status_code=404, content={"error": "user not found"})
+    token = secrets.token_urlsafe(32)
+
+    expires_at = (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
+    cur.execute(
+        "UPDATE users SET password_reset_token=?, password_reset_expires_at=? WHERE id=?",
+        (token, expires_at, row["id"]),
+    )
+    conn.commit()
+    conn.close()
+    return {"ok": True, "token": token}
+
+
+@app.post("/password-reset/complete")
+def password_reset_complete(data: dict = Body(...)):
+    """トークンを検証し、パスワードを更新する"""
+    token = data.get("token", "").strip()
+    password = data.get("password", "")
+    if not token or not password:
+        return JSONResponse(status_code=400, content={"error": "invalid input"})
+    conn = sqlite3.connect("main.db")
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT id, password_reset_expires_at FROM users WHERE password_reset_token=? AND deleted_at IS NULL",
+        (token,),
+    )
+    row = cur.fetchone()
+    if not row:
+        conn.close()
+        return JSONResponse(status_code=400, content={"error": "invalid token"})
+    expires_at = datetime.strptime(row["password_reset_expires_at"], "%Y-%m-%d %H:%M:%S")
+    if datetime.now() > expires_at:
+        conn.close()
+        return JSONResponse(status_code=400, content={"error": "token expired"})
+    password_hash = hashlib.sha256(password.encode()).hexdigest()
+    cur.execute(
+        "UPDATE users SET password_hash=?, password_reset_token=NULL, password_reset_expires_at=NULL WHERE id=?",
+        (password_hash, row["id"]),
+    )
+    conn.commit()
+    conn.close()
+    return {"ok": True}
 
 
 @app.post("/users/{user_id}/viewable-categories")
