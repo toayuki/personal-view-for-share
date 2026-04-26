@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 import secrets
 import sqlite3
 import string
@@ -19,13 +20,11 @@ def _generate_id(length: int = 20) -> str:
 load_dotenv()
 
 app = FastAPI()
-webUrl = "https://192.168.0.7:3000"
-globalUrl = "https://share.toa-yuki.com"
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        webUrl,
-        globalUrl
+        os.getenv("STATIC_URL"),
+        os.getenv("GLOBAL_URL"),
     ],
     allow_credentials=True,
     allow_methods=["*"],
