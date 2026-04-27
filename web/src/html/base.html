@@ -78,12 +78,14 @@
             </ul>
         </nav>
     </header>
+    <div class="header-overlay"></div>
     {% endblock %}
 
     <main class="{{ main_class | default('') }}">
     {% block content %}{% endblock %}
     </main>
 
+    <div class="footer-overlay"></div>
     {% block footer %}
     <footer>
         <ul class="f_link">

@@ -224,7 +224,17 @@ header {
 }
 
 header.fixed {
+	background: transparent;
+}
+.header-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100px;
 	background: var(--bg-header-fixed);
+	pointer-events: none;
+	z-index: 299;
 }
 
 /*
@@ -757,14 +767,28 @@ footer.fixed {
 	bottom: 0;
 	left: 0;
 	width: 100%;
-	background: var(--bg-footer-fixed);
+	background: transparent;
 	z-index: 300;
+	padding-bottom: env(safe-area-inset-bottom);
+}
+.footer-overlay {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	min-height: 100px;
+	background: var(--bg-footer-fixed);
+	pointer-events: none;
+	z-index: 299;
 	padding-bottom: env(safe-area-inset-bottom);
 }
 
 body.sub_page footer,
 body.sub_page footer.fixed {
 	background: transparent;
+}
+body.sub_page .footer-overlay {
+	display: none;
 }
 
 footer {
@@ -1165,10 +1189,10 @@ iOS（iPhone/iPad）向けグラデーション上書き
 Android・PC では適用されない
 -------------------------------------------*/
 @supports (-webkit-touch-callout: none) {
-  header.fixed {
+  .header-overlay {
     background: var(--bg-header-fixed-for-mobile);
   }
-  footer.fixed {
+  .footer-overlay {
     background: var(--bg-footer-fixed-for-mobile);
   }
 }

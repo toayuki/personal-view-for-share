@@ -8,9 +8,10 @@
 <link rel="stylesheet" href="/static/css/slider.css?v=20260221">
 
 <link href="https://use.fontawesome.com/releases/v6.6.0/css/all.css" rel="stylesheet">
+<style>footer, #theme-toggle { visibility: hidden; }</style>
 {% endblock %}
 
-{% macro category_slide(name='', description='', href='', category_id='', image_file_name=None, extra_class='', show_edit=False) %}
+{% macro category_slide(name='', description='', href='', category_id='', image_file_name=None, video_file_name=None, extra_class='', show_edit=False) %}
 <div class="slide{{ (' ' + extra_class) if extra_class }}">
   <div class="slide-content">
     <div class="caption">
@@ -34,6 +35,12 @@
   </div>
   <div class="image-container{{ '' if image_file_name else ' default-category-bg' }}">
     <img class="image" src="{{ '/personal-web/categories/' + category_id + '/bg/' + image_file_name if image_file_name else '' }}"{{ ' style="display:none;"' if not image_file_name }}>
+    {% if video_file_name and category_id %}
+    <div class="slide-video-fade"></div>
+    <video class="slide-video" muted playsinline>
+      <source src="/personal-web/categories/{{ category_id }}/bg/{{ video_file_name }}">
+    </video>
+    {% endif %}
   </div>
 </div>
 {% endmacro %}
@@ -69,6 +76,7 @@
           href=category.id ~ '.html',
           category_id=category.id,
           image_file_name=category.image_file_name,
+          video_file_name=category.video_file_name,
           extra_class='is-active' if loop.first else '',
           show_edit=(role == "admin" or category.created_by|string == user_id)
         ) }}
@@ -122,6 +130,7 @@
 <script src="/static/js/particleEffect.js"></script>
 {% if categories %}
 <script src='https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.1/TweenMax.min.js'></script>
+<script src="/static/js/videoBackground.js"></script>
 <script src="/static/js/slider.js"></script>
 {% endif %}
 <script type="module" src="/static/js/categoryCreateModal.js"></script>
