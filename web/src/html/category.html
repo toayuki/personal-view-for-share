@@ -13,8 +13,8 @@
 <video id="bg-video" autoplay muted playsinline>
   <source src="/personal-web/categories/{{ category_id }}/bg/{{ category_video }}">
 </video>
-<script src="/static/js/videoBackground.js"></script>
-<script>
+<script type="module">
+  import { initBgVideo } from '/static/js/videoBackground.js';
   initBgVideo(document.getElementById('bg-video'), {
     fadeEl: document.getElementById('bg-video-fade'),
     onSuccess: function() {

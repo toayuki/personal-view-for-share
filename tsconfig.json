@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2017", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "skipLibCheck": true,
+    "outDir": "web/src/static/js",
+    "rootDir": "web/src/ts",
+    "noEmitOnError": true,
+    "sourceMap": true
+  },
+  "include": ["web/src/ts/**/*"]
+}

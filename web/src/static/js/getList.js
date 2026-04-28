@@ -1,157 +1,148 @@
-const result = document.getElementById("result");
-const categoryId = result?.dataset.categoryId;
+const result = document.getElementById('result');
+const categoryId = result === null || result === void 0 ? void 0 : result.dataset.categoryId;
 const API_BASE = window.API_BASE;
-
 if (result && categoryId) {
-  fetch(`${API_BASE}/${categoryId}/getList`)
-    .then(response => response.json())
-    .then(data => {
-      data.items.forEach((item) => {
-        result.appendChild(createGridItem(item));
-      });
-
-      // 全動画を一括チェックし、変換中のものだけオーバーレイを追加
-      const videoItems = [...result.querySelectorAll(".grid-item[data-stored-file-name]")];
-      if (videoItems.length > 0) {
-        fetchConversionStatuses(videoItems.map(el => el.dataset.storedFileName))
-          .then(statuses => {
-            videoItems.forEach(el => {
-              const d = statuses[el.dataset.storedFileName];
-              if (d && d.status !== "done" && d.status !== "error") {
-                addConvertingOverlay(el);
-                _updateBar(el, d.progress ?? 0, d.status);
-              }
-            });
-            startConversionPolling();
-          })
-          .catch(() => {});
-      }
+    fetch(`${API_BASE}/${categoryId}/getList`)
+        .then(res => res.json())
+        .then((data) => {
+        data.items.forEach(item => result.appendChild(createGridItem(item)));
+        // 全動画を一括チェックし、変換中のものだけオーバーレイを追加
+        const videoItems = [...result.querySelectorAll('.grid-item[data-stored-file-name]')];
+        if (videoItems.length > 0) {
+            fetchConversionStatuses(videoItems.map(el => el.dataset.storedFileName))
+                .then(statuses => {
+                videoItems.forEach(el => {
+                    var _a;
+                    const d = statuses[el.dataset.storedFileName];
+                    if (d && d.status !== 'done' && d.status !== 'error') {
+                        addConvertingOverlay(el);
+                        _updateBar(el, (_a = d.progress) !== null && _a !== void 0 ? _a : 0, d.status);
+                    }
+                });
+                startConversionPolling();
+            })
+                .catch(() => { });
+        }
     })
-    .catch(err => {
-      if (result) result.textContent = `取得失敗`;
-      console.error(err);
+        .catch(err => {
+        if (result)
+            result.textContent = '取得失敗';
+        console.error(err);
     });
 }
-
 export function createGridItem(item) {
-  const li = document.createElement("li");
-  li.className = "grid-item js-anim-item";
-  li.dataset.id = item.id;
-
-  const linkArea = document.createElement("div");
-  linkArea.className = "options-area";
-
-  const editLink = document.createElement("a");
-  editLink.href = "#";
-  editLink.classList.add("edit-link");
-  editLink.textContent = "edit";
-  editLink.dataset.id = item.id;
-  editLink.dataset.title = item.title ?? "";
-  linkArea.appendChild(editLink);
-
-  const link = document.createElement("a");
-  link.href = "#";
-  link.classList.add("delete-link");
-  link.textContent = "delete";
-  link.dataset.id = item.id;
-  linkArea.appendChild(link);
-
-  const forceDeleteLink = document.createElement("a");
-  forceDeleteLink.href = "#";
-  forceDeleteLink.classList.add("force-delete-link");
-  forceDeleteLink.textContent = "force";
-  forceDeleteLink.dataset.id = item.id;
-  linkArea.appendChild(forceDeleteLink);
-
-  const downloadLink = document.createElement("a");
-  downloadLink.href = `/download/${item.id}`;
-  downloadLink.classList.add("download-link");
-  downloadLink.textContent = "download";
-  downloadLink.dataset.id = item.id;
-  linkArea.appendChild(downloadLink);
-
-  li.appendChild(linkArea);
-
-  const a = document.createElement("a");
-  a.href = `/personal-web/contents/${categoryId}/${item.file_type === "video" ? "video" : "img"}/${item.file_name}`;
-  a.dataset.fancybox = "gallery";
-  a.dataset.type = item.file_type === "video" ? "html5video" : "image";
-
-  const img = document.createElement("img");
-  img.src = `/personal-web/contents/${categoryId}/thumbnail/${item.thumbnail_file_name ?? item.file_name}`;
-  a.appendChild(img);
-
-  const typeIcon = document.createElement("span");
-  typeIcon.className = "file-type-icon";
-  typeIcon.innerHTML = item.file_type === "video"
-    ? '<i class="fa-solid fa-film"></i> VIDEO'
-    : '<i class="fa-regular fa-image"></i> PHOTO';
-  a.appendChild(typeIcon);
-
-  li.appendChild(a);
-  li.appendChild(linkArea);
-
-  if (item.file_type === "video" && item.stored_file_name) {
-    li.dataset.storedFileName = item.stored_file_name;
-  }
-
-  return li;
-}
-
-export function addConvertingOverlay(item) {
-  if (item.classList.contains("converting")) return;
-  item.classList.add("converting");
-  const overlay = document.createElement("div");
-  overlay.className = "converting-overlay";
-  const wrap = document.createElement("div");
-  wrap.className = "converting-progress-wrap";
-  const bar = document.createElement("div");
-  bar.className = "converting-progress-bar";
-  wrap.appendChild(bar);
-  const label = document.createElement("span");
-  label.textContent = "変換中 0%";
-  overlay.appendChild(wrap);
-  overlay.appendChild(label);
-  item.appendChild(overlay);
-}
-
-function _updateBar(item, progress, status) {
-  const bar = item.querySelector(".converting-progress-bar");
-  const label = item.querySelector(".converting-overlay span");
-  const isWaiting = status === "waiting";
-  if (bar) bar.style.width = isWaiting ? "0%" : `${progress}%`;
-  if (label) label.textContent = isWaiting ? "待機中" : `変換中 ${progress}%`;
-  if (label) label.dataset.status = status ?? "converting";
-}
-
-function fetchConversionStatuses(names) {
-  const params = new URLSearchParams(names.map(n => ["names", n]));
-  return fetch(`/conversion-status?${params}`).then(r => r.json());
-}
-
-let _pollingActive = false;
-
-export function startConversionPolling() {
-  if (_pollingActive) return;
-  _pollingActive = true;
-  const interval = setInterval(async () => {
-    const converting = [...(result?.querySelectorAll(".grid-item.converting[data-stored-file-name]") ?? [])];
-    if (converting.length === 0) {
-      clearInterval(interval);
-      _pollingActive = false;
-      return;
+    var _a, _b;
+    const li = document.createElement('li');
+    li.className = 'grid-item js-anim-item';
+    li.dataset.id = item.id;
+    const linkArea = document.createElement('div');
+    linkArea.className = 'options-area';
+    const editLink = document.createElement('a');
+    editLink.href = '#';
+    editLink.classList.add('edit-link');
+    editLink.textContent = 'edit';
+    editLink.dataset.id = item.id;
+    editLink.dataset.title = (_a = item.title) !== null && _a !== void 0 ? _a : '';
+    linkArea.appendChild(editLink);
+    const deleteLink = document.createElement('a');
+    deleteLink.href = '#';
+    deleteLink.classList.add('delete-link');
+    deleteLink.textContent = 'delete';
+    deleteLink.dataset.id = item.id;
+    linkArea.appendChild(deleteLink);
+    const forceDeleteLink = document.createElement('a');
+    forceDeleteLink.href = '#';
+    forceDeleteLink.classList.add('force-delete-link');
+    forceDeleteLink.textContent = 'force';
+    forceDeleteLink.dataset.id = item.id;
+    linkArea.appendChild(forceDeleteLink);
+    const downloadLink = document.createElement('a');
+    downloadLink.href = `/download/${item.id}`;
+    downloadLink.classList.add('download-link');
+    downloadLink.textContent = 'download';
+    downloadLink.dataset.id = item.id;
+    linkArea.appendChild(downloadLink);
+    li.appendChild(linkArea);
+    const a = document.createElement('a');
+    a.href = `/personal-web/contents/${categoryId}/${item.file_type === 'video' ? 'video' : 'img'}/${item.file_name}`;
+    a.dataset.fancybox = 'gallery';
+    a.dataset.type = item.file_type === 'video' ? 'html5video' : 'image';
+    const img = document.createElement('img');
+    img.src = `/personal-web/contents/${categoryId}/thumbnail/${(_b = item.thumbnail_file_name) !== null && _b !== void 0 ? _b : item.file_name}`;
+    a.appendChild(img);
+    const typeIcon = document.createElement('span');
+    typeIcon.className = 'file-type-icon';
+    typeIcon.innerHTML = item.file_type === 'video'
+        ? '<i class="fa-solid fa-film"></i> VIDEO'
+        : '<i class="fa-regular fa-image"></i> PHOTO';
+    a.appendChild(typeIcon);
+    li.appendChild(a);
+    li.appendChild(linkArea);
+    if (item.file_type === 'video' && item.stored_file_name) {
+        li.dataset.storedFileName = item.stored_file_name;
     }
-    try {
-      const statuses = await fetchConversionStatuses(converting.map(el => el.dataset.storedFileName));
-      converting.forEach(item => {
-        const d = statuses[item.dataset.storedFileName];
-        if (!d) return;
-        _updateBar(item, d.progress ?? 0, d.status);
-        if (d.status === "done" || d.status === "error") {
-          item.classList.remove("converting");
-          item.querySelector(".converting-overlay")?.remove();
-        }
-      });
-    } catch {}
-  }, 1000);
+    return li;
 }
+export function addConvertingOverlay(item) {
+    if (item.classList.contains('converting'))
+        return;
+    item.classList.add('converting');
+    const overlay = document.createElement('div');
+    overlay.className = 'converting-overlay';
+    const wrap = document.createElement('div');
+    wrap.className = 'converting-progress-wrap';
+    const bar = document.createElement('div');
+    bar.className = 'converting-progress-bar';
+    wrap.appendChild(bar);
+    const label = document.createElement('span');
+    label.textContent = '変換中 0%';
+    overlay.appendChild(wrap);
+    overlay.appendChild(label);
+    item.appendChild(overlay);
+}
+function _updateBar(item, progress, status) {
+    const bar = item.querySelector('.converting-progress-bar');
+    const label = item.querySelector('.converting-overlay span');
+    const isWaiting = status === 'waiting';
+    if (bar)
+        bar.style.width = isWaiting ? '0%' : `${progress}%`;
+    if (label)
+        label.textContent = isWaiting ? '待機中' : `変換中 ${progress}%`;
+    if (label)
+        label.dataset.status = status !== null && status !== void 0 ? status : 'converting';
+}
+function fetchConversionStatuses(names) {
+    const params = new URLSearchParams(names.map(n => ['names', n]));
+    return fetch(`/conversion-status?${params}`).then(r => r.json());
+}
+let _pollingActive = false;
+export function startConversionPolling() {
+    if (_pollingActive)
+        return;
+    _pollingActive = true;
+    const interval = setInterval(async () => {
+        var _a;
+        const converting = [...((_a = result === null || result === void 0 ? void 0 : result.querySelectorAll('.grid-item.converting[data-stored-file-name]')) !== null && _a !== void 0 ? _a : [])];
+        if (converting.length === 0) {
+            clearInterval(interval);
+            _pollingActive = false;
+            return;
+        }
+        try {
+            const statuses = await fetchConversionStatuses(converting.map(el => el.dataset.storedFileName));
+            converting.forEach(item => {
+                var _a, _b;
+                const d = statuses[item.dataset.storedFileName];
+                if (!d)
+                    return;
+                _updateBar(item, (_a = d.progress) !== null && _a !== void 0 ? _a : 0, d.status);
+                if (d.status === 'done' || d.status === 'error') {
+                    item.classList.remove('converting');
+                    (_b = item.querySelector('.converting-overlay')) === null || _b === void 0 ? void 0 : _b.remove();
+                }
+            });
+        }
+        catch (_b) { }
+    }, 1000);
+}
+//# sourceMappingURL=getList.js.map

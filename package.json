@@ -1,0 +1,28 @@
+{
+  "name": "personal-view-for-share",
+  "version": "1.0.0",
+  "description": "・環境構築手順：webサーバーapiサーバーともに必要 1. venv環境作成：python3 -m venv venv 2. venv環境起動：source venv/bin/activate 3. ライブラリインストール：pip install -r requirements.txt 4. venv環境離脱：deactivate",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/toayuki/personal-view-for-share.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/toayuki/personal-view-for-share/issues"
+  },
+  "homepage": "https://github.com/toayuki/personal-view-for-share#readme",
+  "devDependencies": {
+    "@types/jquery": "^4.0.0",
+    "@types/three": "^0.184.0",
+    "hls.js": "^1.6.16",
+    "typescript": "^6.0.3"
+  }
+}

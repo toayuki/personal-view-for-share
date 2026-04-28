@@ -1,4 +1,17 @@
-*.db
+# macOS
+.DS_Store
+
+# 環境変数
 .env
+
+# Python
 venv
 __pycache__
+*.pyc
+*.db
+
+# Node.js
+node_modules
+
+# TypeScript ビルド成果物
+web/src/static/js/*.js.map
