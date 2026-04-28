@@ -5,6 +5,11 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome lint web/src/ts",
+    "check": "biome check web/src/ts",
+    "format": "biome format --write web/src/ts",
+    "fix": "biome check --write web/src/ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -20,6 +25,7 @@
   },
   "homepage": "https://github.com/toayuki/personal-view-for-share#readme",
   "devDependencies": {
+    "@biomejs/biome": "^2.4.13",
     "@types/jquery": "^4.0.0",
     "@types/three": "^0.184.0",
     "hls.js": "^1.6.16",

@@ -29,7 +29,7 @@ declare const TweenMax: {
     fromVars: TweenVars,
     toVars: TweenVars,
     stagger?: number,
-    onCompleteAll?: () => void
+    onCompleteAll?: () => void,
   ): void;
   killTweensOf(target: object | object[]): void;
 };
@@ -44,7 +44,7 @@ interface QRCodeOptions {
   correctLevel?: number;
 }
 declare const QRCode: {
-  new(element: HTMLElement, options: QRCodeOptions): void;
+  new (element: HTMLElement, options: QRCodeOptions): void;
   CorrectLevel: { L: number; M: number; Q: number; H: number };
 };
 

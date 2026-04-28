@@ -1,4 +1,4 @@
-import { buildFormModal, openNotificationModal, openConfirmModal } from './modal.js';
+import { buildFormModal, openConfirmModal, openNotificationModal } from './modal.js';
 
 let editModalEl: HTMLElement | null = null;
 let currentCategoryId: string | null = null;
@@ -51,9 +51,13 @@ function initEditModal(): void {
   // focus時に位置を保存し、blur時に元の位置へ復元する。
   // 100ms遅延はキーボード収納アニメーション完了前にscrollToを呼ぶと無効になるため。
   let savedScrollY = 0;
-  editModalEl.querySelectorAll('input').forEach(input => {
-    input.addEventListener('focus', () => { savedScrollY = window.scrollY; });
-    input.addEventListener('blur', () => { setTimeout(() => window.scrollTo(0, savedScrollY), 100); });
+  editModalEl.querySelectorAll('input').forEach((input) => {
+    input.addEventListener('focus', () => {
+      savedScrollY = window.scrollY;
+    });
+    input.addEventListener('blur', () => {
+      setTimeout(() => window.scrollTo(0, savedScrollY), 100);
+    });
   });
 }
 
@@ -88,12 +92,18 @@ interface OpenEditModalOptions {
   imageFileName?: string;
 }
 
-function openEditModal({ categoryId, name, description, imageFileName }: OpenEditModalOptions): void {
+function openEditModal({
+  categoryId,
+  name,
+  description,
+  imageFileName,
+}: OpenEditModalOptions): void {
   if (!editModalEl) initEditModal();
   currentCategoryId = categoryId;
 
   editModalEl!.querySelector<HTMLInputElement>('#edit-category-name')!.value = name ?? '';
-  editModalEl!.querySelector<HTMLInputElement>('#edit-category-description')!.value = description ?? '';
+  editModalEl!.querySelector<HTMLInputElement>('#edit-category-description')!.value =
+    description ?? '';
 
   const preview = editModalEl!.querySelector<HTMLImageElement>('#edit-category-img-preview')!;
   const placeholder = editModalEl!.querySelector<HTMLElement>('#edit-category-img-placeholder')!;
@@ -164,7 +174,9 @@ async function saveEditModal(): Promise<void> {
   }
 
   const data = await res.json();
-  const slide = document.querySelector<HTMLElement>(`.category-edit-btn[data-category-id="${currentCategoryId}"]`)?.closest<HTMLElement>('.slide');
+  const slide = document
+    .querySelector<HTMLElement>(`.category-edit-btn[data-category-id="${currentCategoryId}"]`)
+    ?.closest<HTMLElement>('.slide');
   if (slide) {
     slide.querySelector<HTMLElement>('.title')!.textContent = name;
     const descDom = slide.querySelector<HTMLElement>('.text')!;
@@ -189,9 +201,17 @@ async function saveEditModal(): Promise<void> {
 }
 
 function waitForSlideshow(el: JQuery): Promise<void> {
-  return new Promise(resolve => {
-    if (!el.data('wait')) { resolve(); return; }
-    const id = setInterval(() => { if (!el.data('wait')) { clearInterval(id); resolve(); } }, 50);
+  return new Promise((resolve) => {
+    if (!el.data('wait')) {
+      resolve();
+      return;
+    }
+    const id = setInterval(() => {
+      if (!el.data('wait')) {
+        clearInterval(id);
+        resolve();
+      }
+    }, 50);
   });
 }
 
@@ -201,7 +221,9 @@ async function onDeleteClick(): Promise<void> {
   await openConfirmModal({
     message: 'このカテゴリを削除しますか？',
     onOk: async () => {
-      const slide = document.querySelector<HTMLElement>(`.category-edit-btn[data-category-id="${categoryId}"]`)?.closest<HTMLElement>('.slide');
+      const slide = document
+        .querySelector<HTMLElement>(`.category-edit-btn[data-category-id="${categoryId}"]`)
+        ?.closest<HTMLElement>('.slide');
       const slideIndex = slide
         ? [...document.querySelectorAll('.slides .slide')].indexOf(slide)
         : -1;

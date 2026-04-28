@@ -22,12 +22,14 @@ function playSlideVideo(slide: HTMLElement): void {
 
   // 初回のみ initBgVideo（videoBackground.ts）を呼び出してフェード処理を設定する
   video._bgReady = true;
-  const img = slide.querySelector<HTMLElement>('.image');        // フォールバック用の静止画
+  const img = slide.querySelector<HTMLElement>('.image'); // フォールバック用の静止画
   const fadeEl = slide.querySelector<HTMLElement>('.slide-video-fade'); // 動画末尾のフェードオーバーレイ
 
   initBgVideo(video, {
     fadeEl,
-    onSuccess: () => { if (img) img.style.display = 'none'; },
+    onSuccess: () => {
+      if (img) img.style.display = 'none';
+    },
     onFail: () => {
       video.style.display = 'none';
       if (fadeEl) fadeEl.style.display = 'none';
@@ -59,7 +61,12 @@ function syncSlideVideos(sw: JQuery): void {
  * @param auto      - 自動再生中の切り替えかどうか（true なら切り替え後に次のタイマーをセット）
  * @param direction - 'right'|'left'|undefined（undefined なら前後関係から自動判定）
  */
-export function slideshowSwitch(sw: JQuery, index: number, auto?: boolean, direction?: string): void {
+export function slideshowSwitch(
+  sw: JQuery,
+  index: number,
+  auto?: boolean,
+  direction?: string,
+): void {
   // data('wait') が true の間はアニメーション中なので操作を無視する（多重トリガー防止）
   if (sw.data('wait')) return;
 
@@ -84,9 +91,8 @@ export function slideshowSwitch(sw: JQuery, index: number, auto?: boolean, direc
   pages.eq(index).addClass('is-active'); // ページネーションのアクティブドットを更新
 
   // direction が明示されない場合は、新旧スライドのDOM順序から左右を自動判定
-  const slideDir = direction !== undefined
-    ? direction
-    : (newSlide.index() > activeSlide.index() ? 'right' : 'left');
+  const slideDir =
+    direction !== undefined ? direction : newSlide.index() > activeSlide.index() ? 'right' : 'left';
 
   // スライド方向を particleEffect.ts の風エフェクトに伝える
   window.dispatchEvent(new CustomEvent('windTrigger', { detail: { direction: slideDir } }));
@@ -104,25 +110,25 @@ export function slideshowSwitch(sw: JQuery, index: number, auto?: boolean, direc
   let activeSlideImageLeft: number;
 
   if (slideDir === 'right') {
-    newSlideRight = 0;                          // 新スライドは右端に配置
+    newSlideRight = 0; // 新スライドは右端に配置
     newSlideLeft = 'auto';
-    newSlideImageRight = -sw.width()! / 8;      // 画像は少し右にオフセット（パララックス）
+    newSlideImageRight = -sw.width()! / 8; // 画像は少し右にオフセット（パララックス）
     newSlideImageLeft = 'auto';
-    newSlideImageToRight = 0;                   // アニメーション後に画像を正位置へ
+    newSlideImageToRight = 0; // アニメーション後に画像を正位置へ
     newSlideImageToLeft = 'auto';
     newSlideContentLeft = 'auto';
     newSlideContentRight = 0;
-    activeSlideImageLeft = -sw.width()! / 4;    // 旧スライドの画像を左へ退場
+    activeSlideImageLeft = -sw.width()! / 4; // 旧スライドの画像を左へ退場
   } else {
     newSlideRight = '';
-    newSlideLeft = 0;                           // 新スライドは左端に配置
+    newSlideLeft = 0; // 新スライドは左端に配置
     newSlideImageRight = 'auto';
-    newSlideImageLeft = -sw.width()! / 8;       // 画像は少し左にオフセット
+    newSlideImageLeft = -sw.width()! / 8; // 画像は少し左にオフセット
     newSlideImageToRight = '';
     newSlideImageToLeft = 0;
     newSlideContentLeft = 0;
     newSlideContentRight = 'auto';
-    activeSlideImageLeft = sw.width()! / 4;     // 旧スライドの画像を右へ退場
+    activeSlideImageLeft = sw.width()! / 4; // 旧スライドの画像を右へ退場
   }
 
   // 新スライドの初期スタイル: width:0 から展開することでワイプ効果を作る
@@ -130,7 +136,11 @@ export function slideshowSwitch(sw: JQuery, index: number, auto?: boolean, direc
 
   // 画像コンテナはスライド幅を固定して、スライドの展開に連動してスクロールするように見せる
   newSlideImage.css({ width: sw.width()!, right: newSlideImageRight, left: newSlideImageLeft });
-  newSlideContent.css({ width: sw.width()!, left: newSlideContentLeft, right: newSlideContentRight });
+  newSlideContent.css({
+    width: sw.width()!,
+    left: newSlideContentLeft,
+    right: newSlideContentRight,
+  });
   activeSlideImage.css({ left: 0 }); // 旧スライド画像の起点をリセット（アニメーション開始基点）
 
   // キャプション要素をすべて y:20 に初期位置セット（後でスタッガーで上に飛ばす）
@@ -150,11 +160,17 @@ export function slideshowSwitch(sw: JQuery, index: number, auto?: boolean, direc
   TweenMax.to(newSlide, 1, { width: sw.width()!, ease: Power3.easeInOut });
 
   // 新スライドの画像をパララックスオフセットから正位置へ移動（視差効果）
-  TweenMax.to(newSlideImage, 1, { right: newSlideImageToRight, left: newSlideImageToLeft, ease: Power3.easeInOut });
+  TweenMax.to(newSlideImage, 1, {
+    right: newSlideImageToRight,
+    left: newSlideImageToLeft,
+    ease: Power3.easeInOut,
+  });
 
   // キャプション内の要素を0.1秒ずつずらして順番に浮き上がらせる（stagger）
   // delay:0.6 でワイプが終わりかけたタイミングから開始
-  TweenMax.staggerFromTo(newSlideElements, 0.8,
+  TweenMax.staggerFromTo(
+    newSlideElements,
+    0.8,
     { alpha: 0, y: 60 },
     { alpha: 1, y: 0, ease: Power3.easeOut, force3D: true, delay: 0.6 },
     0.1,
@@ -175,7 +191,7 @@ export function slideshowSwitch(sw: JQuery, index: number, auto?: boolean, direc
         const t = setTimeout(() => slideshowNext(sw, false, true), slideshowDuration);
         sw.data('timeout', t);
       }
-    }
+    },
   );
 }
 
@@ -194,10 +210,16 @@ function slideshowNext(sw: JQuery, previous: boolean, auto: boolean): void {
 
   if (previous) {
     newSlide = activeSlide.prev('.slide');
-    if (newSlide.length === 0) { newSlide = slides.last(); direction = 'left'; } // 先頭で「前へ」→ 末尾にジャンプ
+    if (newSlide.length === 0) {
+      newSlide = slides.last();
+      direction = 'left';
+    } // 先頭で「前へ」→ 末尾にジャンプ
   } else {
     newSlide = activeSlide.next('.slide');
-    if (newSlide.length === 0) { newSlide = slides.first(); direction = 'right'; } // 末尾で「次へ」→ 先頭にジャンプ
+    if (newSlide.length === 0) {
+      newSlide = slides.first();
+      direction = 'right';
+    } // 末尾で「次へ」→ 先頭にジャンプ
   }
 
   slideshowSwitch(sw, newSlide.index(), auto, direction);
@@ -227,16 +249,22 @@ function runIntroSequence(sw: JQuery, onComplete: () => void): void {
   // すべての .image 要素の読み込みを待ってからアニメーション開始
   // 画像が揃う前に動くと一部が空白になるため
   const images = categorySlides.find('.image').toArray() as HTMLImageElement[];
-  const loadPromises = images.map(img => new Promise<void>(resolve => {
-    if (img.complete) { resolve(); return; } // すでにキャッシュ済みなら即 resolve
-    img.addEventListener('load', () => resolve());
-    img.addEventListener('error', () => resolve()); // 読み込み失敗でも待機を止める
-  }));
+  const loadPromises = images.map(
+    (img) =>
+      new Promise<void>((resolve) => {
+        if (img.complete) {
+          resolve();
+          return;
+        } // すでにキャッシュ済みなら即 resolve
+        img.addEventListener('load', () => resolve());
+        img.addEventListener('error', () => resolve()); // 読み込み失敗でも待機を止める
+      }),
+  );
 
   Promise.all(loadPromises).then(() => {
     const slidesContainer = sw.find('.slides');
     const w = sw.width()!; // スライドショーの幅（各スライドの基準幅）
-    let skipped = false;   // showWelcome の多重呼び出しを防ぐフラグ
+    let skipped = false; // showWelcome の多重呼び出しを防ぐフラグ
 
     // スキップボタンを DOM に追加
     const skipBtn = $('<div class="intro-skip-btn">skip &rsaquo;&rsaquo;</div>');
@@ -259,7 +287,7 @@ function runIntroSequence(sw: JQuery, onComplete: () => void): void {
       slidesContainer.css('width', '');
       slides.removeClass('is-active');
       pagination.removeClass('is-active');
-      slides.eq(0).addClass('is-active');     // 0番スライドをアクティブに戻す
+      slides.eq(0).addClass('is-active'); // 0番スライドをアクティブに戻す
       pagination.eq(0).addClass('is-active');
       onComplete();
     }
@@ -277,29 +305,42 @@ function runIntroSequence(sw: JQuery, onComplete: () => void): void {
       TweenMax.set(slidesContainer, { x: -(categoryTotal - 1) * w, force3D: true });
 
       // ウェルカムメッセージ要素を生成してスライドショー内に追加
-      const welcome = $('<div class="intro-welcome"><div class="intro-welcome-text">Share Your Memories</div></div>');
+      const welcome = $(
+        '<div class="intro-welcome"><div class="intro-welcome-text">Share Your Memories</div></div>',
+      );
       sw.find('.slideshow-inner').append(welcome);
       const welcomeText = welcome.find('.intro-welcome-text');
 
       // ウェルカム表示と同時に「左から右へ吹く風」エフェクトを起動
-      window.dispatchEvent(new CustomEvent('windTrigger', { detail: { direction: 'left', duration: 600 } }));
+      window.dispatchEvent(
+        new CustomEvent('windTrigger', { detail: { direction: 'left', duration: 600 } }),
+      );
 
       // 0.6秒で最初のスライドに戻る（x=0）
       TweenMax.to(slidesContainer, 0.6, { x: 0, ease: Power2.easeOut, force3D: true });
 
       // テキストをフェードイン → 0.8秒後にフェードアウト → cleanup()
       TweenMax.to(welcomeText, 0.5, {
-        opacity: 1, delay: 0.1,
+        opacity: 1,
+        delay: 0.1,
         onComplete: () => {
           TweenMax.to(welcome, 0.5, {
-            opacity: 0, ease: Power1.easeIn, delay: 0.8,
-            onComplete: () => { welcome.remove(); cleanup(); },
+            opacity: 0,
+            ease: Power1.easeIn,
+            delay: 0.8,
+            onComplete: () => {
+              welcome.remove();
+              cleanup();
+            },
           });
         },
       });
     }
 
-    skipBtn.on('click', () => { skipBtn.hide(); showWelcome(); }); // スキップ時は即ウェルカム画面へ
+    skipBtn.on('click', () => {
+      skipBtn.hide();
+      showWelcome();
+    }); // スキップ時は即ウェルカム画面へ
 
     // イントロ中は操作 UI を隠す
     sw.find('.arrows').css('visibility', 'hidden');
@@ -317,12 +358,19 @@ function runIntroSequence(sw: JQuery, onComplete: () => void): void {
     slidesContainer.css('width', categoryTotal * w);
 
     // 右向きの風を「カテゴリ数 × 400ms」の持続時間で起動
-    window.dispatchEvent(new CustomEvent('windTrigger', { detail: { direction: 'right', duration: categoryTotal * 400 } }));
+    window.dispatchEvent(
+      new CustomEvent('windTrigger', {
+        detail: { direction: 'right', duration: categoryTotal * 400 },
+      }),
+    );
 
     // slidesContainer を「カテゴリ数 × 0.4秒」かけて左端まで流す（右スクロール演出）
     // 完了時に showWelcome() を呼ぶ
     TweenMax.to(slidesContainer, categoryTotal * 0.4, {
-      x: -(categoryTotal - 1) * w, ease: Power2.easeInOut, force3D: true, onComplete: showWelcome,
+      x: -(categoryTotal - 1) * w,
+      ease: Power2.easeInOut,
+      force3D: true,
+      onComplete: showWelcome,
     });
   });
 }
@@ -371,14 +419,16 @@ $(document).ready(() => {
     if (!href) return;
     const spinner = document.getElementById('loading');
     if (spinner) spinner.classList.remove('loaded'); // スピナー表示
-    setTimeout(() => { location.href = href; }, 50);
+    setTimeout(() => {
+      location.href = href;
+    }, 50);
   });
 
   // イントロシーケンスを起動し、完了後に自動再生を開始する
   function startIntro(): void {
     runIntroSequence(slideshow, () => {
       slideshow.find('.slide .slide-content').css('visibility', ''); // テキストを再表示
-      slideshow.find('.arrows').css('visibility', '');               // 矢印を再表示
+      slideshow.find('.arrows').css('visibility', ''); // 矢印を再表示
       syncSlideVideos(slideshow); // イントロで全動画を起動したので非アクティブを止める
       const t = setTimeout(() => slideshowNext(slideshow, false, true), slideshowDuration);
       slideshow.data('timeout', t);

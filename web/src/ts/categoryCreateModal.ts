@@ -37,9 +37,13 @@ function initCategoryModal(): void {
   // focus時に位置を保存し、blur時に元の位置へ復元する。
   // 100ms遅延はキーボード収納アニメーション完了前にscrollToを呼ぶと無効になるため。
   let savedScrollY = 0;
-  categoryModalEl.querySelectorAll('input').forEach(input => {
-    input.addEventListener('focus', () => { savedScrollY = window.scrollY; });
-    input.addEventListener('blur', () => { setTimeout(() => window.scrollTo(0, savedScrollY), 100); });
+  categoryModalEl.querySelectorAll('input').forEach((input) => {
+    input.addEventListener('focus', () => {
+      savedScrollY = window.scrollY;
+    });
+    input.addEventListener('blur', () => {
+      setTimeout(() => window.scrollTo(0, savedScrollY), 100);
+    });
   });
 }
 
@@ -117,16 +121,27 @@ async function saveCategoryModal(): Promise<void> {
  * @param description   - 説明文
  * @param imageFileName - サムネイル画像ファイル名。なければnull
  */
-function addCategorySlide(id: string, name: string, description: string, imageFileName: string | null): void {
+function addCategorySlide(
+  id: string,
+  name: string,
+  description: string,
+  imageFileName: string | null,
+): void {
   const slidesEl = document.querySelector('.slideshow .slides');
-  if (!slidesEl) { location.reload(); return; }
+  if (!slidesEl) {
+    location.reload();
+    return;
+  }
 
   const tpl = document.getElementById('category-slide-tpl') as HTMLTemplateElement;
   const slide = tpl.content.cloneNode(true) as DocumentFragment;
   const slideEl = slide.querySelector<HTMLElement>('.slide')!;
   slideEl.querySelector<HTMLElement>('.title')!.textContent = name;
   const descDom = slideEl.querySelector<HTMLElement>('.text')!;
-  if (description) { descDom.textContent = description; descDom.style.display = ''; }
+  if (description) {
+    descDom.textContent = description;
+    descDom.style.display = '';
+  }
   slideEl.querySelector<HTMLAnchorElement>('.btn')!.href = `${id}.html`;
 
   const editBtn = slideEl.querySelector<HTMLElement>('.category-edit-btn')!;

@@ -15,8 +15,8 @@ export function initBgVideo(videoEl: HTMLVideoElement, options?: BgVideoOptions)
   if (!videoEl) return;
   const opts = options ?? {};
   const fadeEl = opts.fadeEl ?? null; // フェードオーバーレイ（なければ null）
-  const fadeDuration = 0.8;           // フェード開始から完了までの秒数
-  let fading = false;                 // フェードが進行中かどうかのフラグ（二重起動防止）
+  const fadeDuration = 0.8; // フェード開始から完了までの秒数
+  let fading = false; // フェードが進行中かどうかのフラグ（二重起動防止）
 
   // ---- 動画末尾のフェードアウト処理 ----
   // timeupdate は再生位置が変わるたびに発火する（おおよそ 4〜66ms 間隔）
@@ -50,7 +50,7 @@ export function initBgVideo(videoEl: HTMLVideoElement, options?: BgVideoOptions)
       setTimeout(() => {
         fadeEl.style.transition = `opacity ${fadeDuration}s linear`;
         fadeEl.style.opacity = '0'; // オーバーレイを非表示 → 動画が見える状態に戻す
-        fading = false;             // フェードフラグをリセットして次のループに備える
+        fading = false; // フェードフラグをリセットして次のループに備える
       }, 500);
     });
   }

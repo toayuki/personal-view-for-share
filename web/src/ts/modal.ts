@@ -21,9 +21,16 @@ export interface ConfirmModalOptions {
  * 呼び出し側が返り値を保持し、必要なタイミングでclassList.add('modal-open')して表示する。
  * フォームなど何度も開閉するモーダルに使う。
  */
-export function buildFormModal({ id, icon = null, title, bodyHTML }: FormModalOptions): HTMLElement {
+export function buildFormModal({
+  id,
+  icon = null,
+  title,
+  bodyHTML,
+}: FormModalOptions): HTMLElement {
   const iconHTML = icon != null ? `<div class="modal-icon">${icon}</div>` : '';
-  document.body.insertAdjacentHTML('beforeend', `
+  document.body.insertAdjacentHTML(
+    'beforeend',
+    `
     <div id="${id}" class="overlay">
       <div class="modal">
         ${iconHTML}
@@ -36,7 +43,8 @@ export function buildFormModal({ id, icon = null, title, bodyHTML }: FormModalOp
         </div>
       </div>
     </div>
-  `);
+  `,
+  );
   return document.getElementById(id)!;
 }
 
@@ -66,7 +74,9 @@ let confirmModal: HTMLElement | null = null;
 
 export function openConfirmModal({ message, onOk }: ConfirmModalOptions): void {
   if (!confirmModal) {
-    document.body.insertAdjacentHTML('beforeend', `
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      `
       <div id="confirm-modal" class="overlay">
         <div class="modal">
           <div class="modal-icon">!</div>
@@ -78,7 +88,8 @@ export function openConfirmModal({ message, onOk }: ConfirmModalOptions): void {
           </div>
         </div>
       </div>
-    `);
+    `,
+    );
     confirmModal = document.getElementById('confirm-modal');
   }
 

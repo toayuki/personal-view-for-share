@@ -43,14 +43,20 @@ function open(index: number): void {
 }
 
 function close(): void {
-  if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
+  if (hlsInstance) {
+    hlsInstance.destroy();
+    hlsInstance = null;
+  }
   overlay.classList.remove('lb-open');
   document.body.style.overflow = '';
   content.innerHTML = '';
 }
 
 function render(): void {
-  if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
+  if (hlsInstance) {
+    hlsInstance.destroy();
+    hlsInstance = null;
+  }
   content.innerHTML = '';
   const item = items[currentIndex];
 
@@ -83,14 +89,26 @@ function render(): void {
   nextBtn.style.visibility = currentIndex === items.length - 1 ? 'hidden' : 'visible';
 }
 
-function prev(): void { if (currentIndex > 0) open(currentIndex - 1); }
-function next(): void { if (currentIndex < items.length - 1) open(currentIndex + 1); }
+function prev(): void {
+  if (currentIndex > 0) open(currentIndex - 1);
+}
+function next(): void {
+  if (currentIndex < items.length - 1) open(currentIndex + 1);
+}
 
 closeBtn.addEventListener('click', close);
 // オーバーレイ背景クリックで閉じる
-overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
-prevBtn.addEventListener('click', (e) => { e.stopPropagation(); prev(); });
-nextBtn.addEventListener('click', (e) => { e.stopPropagation(); next(); });
+overlay.addEventListener('click', (e) => {
+  if (e.target === overlay) close();
+});
+prevBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  prev();
+});
+nextBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  next();
+});
 
 // キーボード操作
 document.addEventListener('keydown', (e) => {
@@ -108,8 +126,10 @@ document.addEventListener('click', (e) => {
   e.preventDefault();
 
   const group = a.dataset.fancybox!;
-  const allLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>(`a[data-fancybox="${group}"]`));
+  const allLinks = Array.from(
+    document.querySelectorAll<HTMLAnchorElement>(`a[data-fancybox="${group}"]`),
+  );
 
-  items = allLinks.map(el => ({ href: el.href, type: el.dataset.type ?? 'image' }));
+  items = allLinks.map((el) => ({ href: el.href, type: el.dataset.type ?? 'image' }));
   open(allLinks.indexOf(a));
 });

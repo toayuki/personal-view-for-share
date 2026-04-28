@@ -18,16 +18,18 @@ const API_BASE = window.API_BASE;
 
 if (result && categoryId) {
   fetch(`${API_BASE}/${categoryId}/getList`)
-    .then(res => res.json())
+    .then((res) => res.json())
     .then((data: { items: ContentItem[] }) => {
-      data.items.forEach(item => result.appendChild(createGridItem(item)));
+      data.items.forEach((item) => result.appendChild(createGridItem(item)));
 
       // 全動画を一括チェックし、変換中のものだけオーバーレイを追加
-      const videoItems = [...result.querySelectorAll<HTMLLIElement>('.grid-item[data-stored-file-name]')];
+      const videoItems = [
+        ...result.querySelectorAll<HTMLLIElement>('.grid-item[data-stored-file-name]'),
+      ];
       if (videoItems.length > 0) {
-        fetchConversionStatuses(videoItems.map(el => el.dataset.storedFileName!))
-          .then(statuses => {
-            videoItems.forEach(el => {
+        fetchConversionStatuses(videoItems.map((el) => el.dataset.storedFileName!))
+          .then((statuses) => {
+            videoItems.forEach((el) => {
               const d = statuses[el.dataset.storedFileName!];
               if (d && d.status !== 'done' && d.status !== 'error') {
                 addConvertingOverlay(el);
@@ -39,7 +41,7 @@ if (result && categoryId) {
           .catch(() => {});
       }
     })
-    .catch(err => {
+    .catch((err) => {
       if (result) result.textContent = '取得失敗';
       console.error(err);
     });
@@ -95,9 +97,10 @@ export function createGridItem(item: ContentItem): HTMLLIElement {
 
   const typeIcon = document.createElement('span');
   typeIcon.className = 'file-type-icon';
-  typeIcon.innerHTML = item.file_type === 'video'
-    ? '<i class="fa-solid fa-film"></i> VIDEO'
-    : '<i class="fa-regular fa-image"></i> PHOTO';
+  typeIcon.innerHTML =
+    item.file_type === 'video'
+      ? '<i class="fa-solid fa-film"></i> VIDEO'
+      : '<i class="fa-regular fa-image"></i> PHOTO';
   a.appendChild(typeIcon);
 
   li.appendChild(a);
@@ -137,8 +140,8 @@ function _updateBar(item: HTMLElement, progress: number, status: string): void {
 }
 
 function fetchConversionStatuses(names: string[]): Promise<Record<string, ConversionStatus>> {
-  const params = new URLSearchParams(names.map(n => ['names', n] as [string, string]));
-  return fetch(`/conversion-status?${params}`).then(r => r.json());
+  const params = new URLSearchParams(names.map((n) => ['names', n] as [string, string]));
+  return fetch(`/conversion-status?${params}`).then((r) => r.json());
 }
 
 let _pollingActive = false;
@@ -147,15 +150,20 @@ export function startConversionPolling(): void {
   if (_pollingActive) return;
   _pollingActive = true;
   const interval = setInterval(async () => {
-    const converting = [...(result?.querySelectorAll<HTMLLIElement>('.grid-item.converting[data-stored-file-name]') ?? [])];
+    const converting = [
+      ...(result?.querySelectorAll<HTMLLIElement>('.grid-item.converting[data-stored-file-name]') ??
+        []),
+    ];
     if (converting.length === 0) {
       clearInterval(interval);
       _pollingActive = false;
       return;
     }
     try {
-      const statuses = await fetchConversionStatuses(converting.map(el => el.dataset.storedFileName!));
-      converting.forEach(item => {
+      const statuses = await fetchConversionStatuses(
+        converting.map((el) => el.dataset.storedFileName!),
+      );
+      converting.forEach((item) => {
         const d = statuses[item.dataset.storedFileName!];
         if (!d) return;
         _updateBar(item, d.progress ?? 0, d.status);

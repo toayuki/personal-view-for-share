@@ -4,7 +4,9 @@ let shareModal: HTMLElement | null = null;
 let currentShareUrl = '';
 
 function initShareModal(): void {
-  document.body.insertAdjacentHTML('beforeend', `
+  document.body.insertAdjacentHTML(
+    'beforeend',
+    `
     <div id="share-modal" class="overlay">
       <div class="modal">
         <div class="modal-icon"><i class="fa-solid fa-share-nodes"></i></div>
@@ -24,7 +26,8 @@ function initShareModal(): void {
         </div>
       </div>
     </div>
-  `);
+  `,
+  );
   shareModal = document.getElementById('share-modal')!;
 
   shareModal.querySelector('#share-qr-btn')!.addEventListener('click', () => {
@@ -36,7 +39,14 @@ function initShareModal(): void {
         const qrWrap = document.createElement('div');
         qrWrap.style.cssText = 'position:relative; display:inline-block; line-height:0;';
         container.appendChild(qrWrap);
-        new QRCode(qrWrap, { text: currentShareUrl, width: 160, height: 160, colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
+        new QRCode(qrWrap, {
+          text: currentShareUrl,
+          width: 160,
+          height: 160,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.H,
+        });
         // -- QR中央ラベル（不要な場合は以下の3行をコメントアウト） --
         // const labelEl = document.createElement('div');
         // labelEl.textContent = 'share with you';
