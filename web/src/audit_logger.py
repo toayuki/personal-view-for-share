@@ -133,8 +133,11 @@ def log_action(
         pass
 
 
-def make_audit_middleware(active_sessions: dict, api_url: str):
-    """audit_middleware のファクトリ関数。active_sessions と api_url をクロージャで保持する。"""
+def make_audit_middleware(decode_token, api_url: str):
+    """audit_middleware のファクトリ関数。decode_token と api_url をクロージャで保持する。
+
+    decode_token: (token: str) -> dict  JWT トークン文字列を受け取り payload dict を返す関数
+    """
 
     async def audit_middleware(request: Request, call_next):
         """リクエストのメソッド・パスからユーザー操作を自動記録するミドルウェア"""
@@ -151,9 +154,9 @@ def make_audit_middleware(active_sessions: dict, api_url: str):
                 accept_language=request.headers.get("accept-language", "-"),
             )
 
-        # ログアウトはエンドポイント実行後にセッションが消えるため、呼び出し前に取得
+        # ログアウト後はクッキーが削除されるため、レスポンス前にセッションユーザーIDを取得しておく
         token = request.cookies.get("session")
-        pre_user_id = active_sessions.get(token, {}).get("user_id")
+        session_user_id = decode_token(token).get("user_id") if token else None
 
         response = await call_next(request)
 
@@ -166,21 +169,18 @@ def make_audit_middleware(active_sessions: dict, api_url: str):
             details = m.groupdict()
             if action == "login":
                 if response.status_code == 302:
-                    # レスポンスの Set-Cookie から新しいセッショントークンを取得
+                    # レスポンスの Set-Cookie から新しい JWT を取得してデコード
                     set_cookie = response.headers.get("set-cookie", "")
                     new_token = next(
                         (p.strip()[len("session="):] for p in set_cookie.split(";") if p.strip().startswith("session=")),
                         None,
                     )
-                    user_id = active_sessions.get(new_token, {}).get("user_id")
+                    user_id = decode_token(new_token).get("user_id") if new_token else None
                     log_action(user_id, "login", api_url, details, ip)
                 else:
                     log_action(None, "login_failed", api_url, details, ip)
-            elif action == "logout":
-                log_action(pre_user_id, "logout", api_url, details, ip)
             else:
-                user_id = active_sessions.get(token, {}).get("user_id")
-                log_action(user_id, action, api_url, details, ip)
+                log_action(session_user_id, action, api_url, details, ip)
             break
 
         return response

@@ -390,6 +390,20 @@ def password_reset_complete(data: dict = Body(...)):
     return {"ok": True}
 
 
+@app.get("/users/{user_id}/viewable-categories")
+def get_viewable_categories(user_id: str):
+    """ユーザーの閲覧可能カテゴリID一覧を返す"""
+    conn = sqlite3.connect("main.db")
+    cur = conn.cursor()
+    cur.execute("SELECT viewable_category_ids FROM users WHERE id=? AND deleted_at IS NULL", (user_id,))
+    row = cur.fetchone()
+    conn.close()
+    if not row:
+        return JSONResponse(status_code=404, content={"error": "user not found"})
+    ids = json.loads(row[0]) if row[0] else []
+    return {"category_ids": ids}
+
+
 @app.post("/users/{user_id}/viewable-categories")
 def add_viewable_category(user_id: str, data: dict = Body(...)):
     """ユーザーの閲覧可能カテゴリにIDを追加する"""
