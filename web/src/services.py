@@ -3,24 +3,23 @@
 """
 
 import io
-from pathlib import Path
 import random
 import re
 import string
 import subprocess
 import threading
-from PIL import Image, ImageOps
-from typing import Callable, Literal
+from pathlib import Path
+from typing import Any, Callable, Literal, cast
 
-import pillow_heif
-import rawpy
+import numpy as np
+import pillow_heif  # pyright: ignore[reportMissingTypeStubs]
+import rawpy  # pyright: ignore[reportMissingTypeStubs]
+from PIL import Image, ImageOps
 
 
 def create_random_file_name(file_name_words: int) -> str:
     """指定した長さのランダム文字列を生成する"""
-    return "".join(
-        random.choices(string.ascii_letters + string.digits, k=file_name_words)
-    )
+    return "".join(random.choices(string.ascii_letters + string.digits, k=file_name_words))
 
 
 def get_file_type(file_path: Path) -> Literal["image", "video", "other"]:
@@ -57,11 +56,11 @@ def save_image_as_webp(
 ) -> None:
     """画像をWebPに変換して保存する。max_px/max_kbを指定すると解像度・容量を制限する。"""
     if ext == ".heic":
-        heif_file = pillow_heif.read_heif(file_bytes)
+        heif_file: Any = pillow_heif.read_heif(file_bytes)  # pyright: ignore[reportUnknownMemberType] -- pillow_heif has no stubs
         image = Image.frombytes(heif_file.mode, heif_file.size, heif_file.data, "raw")
     elif ext == ".dng":
-        with rawpy.imread(file_bytes) as raw:
-            rgb = raw.postprocess()
+        with rawpy.imread(file_bytes) as raw:  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType] -- rawpy has no stubs
+            rgb = cast(np.ndarray, raw.postprocess())  # pyright: ignore[reportUnknownMemberType] -- rawpy has no stubs
             image = Image.fromarray(rgb)
     else:
         image = Image.open(io.BytesIO(file_bytes))
@@ -71,6 +70,7 @@ def save_image_as_webp(
     if max_px:
         image.thumbnail((max_px, max_px), Image.Resampling.LANCZOS)
     if max_kb:
+        buf = io.BytesIO()
         for q in range(quality, 9, -5):
             buf = io.BytesIO()
             image.save(buf, "WEBP", quality=q)
@@ -86,20 +86,22 @@ def save_image_as_webp(
 
 def convert_to_bg_mp4(input_path: Path, output_path: Path, max_seconds: int | None = None):
     """任意の動画を MP4（ブラウザ互換）に変換する。max_seconds 指定時はその秒数で切り詰める"""
+    # fmt: off
     cmd = [
         "ffmpeg",
         "-y",
         "-i", str(input_path),
-        *(["-t", str(max_seconds)] if max_seconds is not None else []),
-        "-c:v", "libx264",
-        "-pix_fmt", "yuv420p",
+        *(["-t", str(max_seconds)] if max_seconds is not None else []),  # 秒数指定時のみ付加
+        "-c:v", "libx264",           # H.264（ブラウザ互換）
+        "-pix_fmt", "yuv420p",       # Safari/Chrome 対応に必須
         "-profile:v", "high",
         "-level", "4.2",
-        "-movflags", "+faststart",
+        "-movflags", "+faststart",   # moov atom を先頭に移動してストリーミング再生を高速化
         "-c:a", "aac",
         "-b:a", "128k",
         str(output_path),
     ]
+    # fmt: on
     subprocess.run(cmd, check=True)
 
 
@@ -112,23 +114,25 @@ def convert_to_hls(
     再エンコードにより回転メタデータを映像フレームに焼き込む。
     on_progress が指定された場合、0〜100 の進捗率を逐次コールバックする。"""
     output_dir.mkdir(parents=True, exist_ok=True)
+    # fmt: off
     cmd = [
         "ffmpeg",
-        "-y",                                                        # 出力ファイルが既存でも確認なしで上書き
-        "-i", str(input_path),                                       # 入力ファイル
-        "-c:v", "libx264",                                           # 映像コーデック（ブラウザ互換性が高いH.264）
-        "-pix_fmt", "yuv420p",                                       # ピクセルフォーマット（Safari/Chrome対応に必須）
-        "-profile:v", "high",                                        # H.264プロファイル（画質・圧縮効率のバランス）
-        "-level", "4.2",                                             # H.264レベル（最大解像度・ビットレートの上限規定）
-        "-crf", "18",                                                # 品質指定（0=無劣化〜51=最低画質、18は高画質）
-        "-metadata:s:v:0", "rotate=0",                              # 回転メタデータをリセット（フレームへの焼き込み後に不要なので除去）
-        "-c:a", "aac",                                               # 音声コーデック
-        "-b:a", "128k",                                              # 音声ビットレート
-        "-hls_time", "10",                                           # 1セグメントあたりの秒数（10秒ごとに.tsファイルを分割）
-        "-hls_list_size", "0",                                       # プレイリストに全セグメントを記載（0=削除しない）
-        "-hls_segment_filename", str(output_dir / "seg%03d.ts"),    # セグメントファイルの命名規則（seg001.ts, seg002.ts ...）
-        str(output_dir / "index.m3u8"),                              # 出力プレイリストファイル
+        "-y",
+        "-i", str(input_path),
+        "-c:v", "libx264",                                               # H.264（ブラウザ互換）
+        "-pix_fmt", "yuv420p",                                           # Safari/Chrome 対応に必須
+        "-profile:v", "high",
+        "-level", "4.2",
+        "-crf", "18",                                # 高画質（0=無劣化〜51=最低）
+        "-metadata:s:v:0", "rotate=0",              # 回転メタをリセット（焼き込み済みのため不要）
+        "-c:a", "aac",
+        "-b:a", "128k",
+        "-hls_time", "10",                          # 1セグメント = 10秒
+        "-hls_list_size", "0",                      # プレイリストに全セグメントを保持
+        "-hls_segment_filename", str(output_dir / "seg%03d.ts"),        # seg000.ts, seg001.ts ...
+        str(output_dir / "index.m3u8"),
     ]
+    # fmt: on
 
     if on_progress is None:
         subprocess.run(cmd, check=True)
@@ -147,37 +151,48 @@ def convert_to_hls(
 
     # stderrをパイプで受け取るためPopen（非同期起動）を使用
     proc = subprocess.Popen(cmd, stderr=subprocess.PIPE)
+    assert proc.stderr is not None
+    stderr = proc.stderr
     # total_ms をリストで持つのは、クロージャ内から書き換えるための回避策
     total_ms: list[float | None] = [None]
 
     def _parse_stderr() -> None:
         buf = b""
         while True:
-            # 256バイトずつ読み込む（read はデータが来るまでブロックし、EOFで空バイトを返す）
-            chunk = proc.stderr.read(256)
+            chunk = stderr.read(256)
             if not chunk:
                 break
             buf += chunk
-            # ffmpegは進捗を \r（キャリッジリターン）で同一行に上書き出力するため、\r と \n 両方で分割
             parts = re.split(rb"[\r\n]", buf)
             buf = parts[-1]  # 末尾の未完行は次のチャンクと結合するために保持
             for part in parts[:-1]:
                 if total_ms[0] is None:
                     m = _DURATION_RE.search(part)
                     if m:
-                        total_ms[0] = _to_ms(m.group(1), m.group(2), m.group(3))
+                        total_ms[0] = _to_ms(
+                            m.group(1).decode(), m.group(2).decode(), m.group(3).decode()
+                        )
                 if total_ms[0]:
                     m = _TIME_RE.search(part)
                     if m:
                         # 進捗率を計算し、完了前に100%になるのを防ぐため上限を99%に制限
-                        pct = min(int(_to_ms(m.group(1), m.group(2), m.group(3)) / total_ms[0] * 100), 99)
+                        pct = min(
+                            int(
+                                _to_ms(
+                                    m.group(1).decode(), m.group(2).decode(), m.group(3).decode()
+                                )
+                                / total_ms[0]
+                                * 100
+                            ),
+                            99,
+                        )
                         on_progress(pct)
 
     # stderrのパースをメインスレッドと並行して実行（daemon=True でメインプロセス終了時に自動終了）
     t = threading.Thread(target=_parse_stderr, daemon=True)
     t.start()
     proc.wait()  # ffmpegプロセスの終了を待機
-    t.join()     # stderrパーススレッドの終了を待機
+    t.join()  # stderrパーススレッドの終了を待機
 
     if proc.returncode != 0:
         raise subprocess.CalledProcessError(proc.returncode, cmd)

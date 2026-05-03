@@ -21,7 +21,7 @@ document.body.prepend(canvas);
 // Three.js 本体を CDN から非同期ロード。onload 内でシーン構築を行う
 const script = document.createElement('script');
 script.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
-script.onload = function () {
+script.onload = () => {
     // ---- Three.js シーン基本セットアップ ----
     const scene = new THREE.Scene();
     // PerspectiveCamera(視野角, アスペクト比, near, far)
@@ -73,16 +73,18 @@ script.onload = function () {
     // 星/蛍光体のような自然な光源を模倣するため、暖色〜寒色を混在させる
     // RGB 比率で指定（1.0 が最大輝度）
     const tints = [
-        [1.00, 0.92, 0.75], // 暖色（キャンドル光）
-        [1.00, 0.97, 0.88], // やや暖色
-        [1.00, 1.00, 1.00], // 中性白
-        [1.00, 1.00, 1.00], // 中性白（出現頻度を上げるため重複）
-        [0.88, 0.95, 1.00], // やや寒色
-        [0.80, 0.90, 1.00], // 寒色（月光）
+        [1.0, 0.92, 0.75], // 暖色（キャンドル光）
+        [1.0, 0.97, 0.88], // やや暖色
+        [1.0, 1.0, 1.0], // 中性白
+        [1.0, 1.0, 1.0], // 中性白（出現頻度を上げるため重複）
+        [0.88, 0.95, 1.0], // やや寒色
+        [0.8, 0.9, 1.0], // 寒色（月光）
     ];
     // y 座標のフェード開始点をランダムに決める（-100〜100 の範囲）
     // 上端に近いほど早くフェードアウトするが、個体差を出すためランダムにする
-    function randomFadeStart() { return -100 + Math.random() * 200; }
+    function randomFadeStart() {
+        return -100 + Math.random() * 200;
+    }
     // 画面右側に粒子が多く見えるよう、x 座標の出現分布を非対称にしている
     // 右寄りデザインのため: 遠右(55%) > 近右(30%) > 左(15%) の確率で配置
     function randomX() {
@@ -139,7 +141,7 @@ script.onload = function () {
     const WIND_MAX = 1.8; // 風の最大速度（x 方向の加速度上限）
     // スライドが切り替わると slider.js から 'windTrigger' カスタムイベントが飛んでくる
     // direction: 'right'|'left', duration: ミリ秒
-    window.addEventListener('windTrigger', function (e) {
+    window.addEventListener('windTrigger', (e) => {
         var _a;
         const detail = e.detail;
         windDir = detail.direction === 'right' ? 1 : -1;

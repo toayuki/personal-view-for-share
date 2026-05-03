@@ -1,7 +1,6 @@
 import { initBgVideo } from './videoBackground.js';
 // スライドが表示される最低時間（ミリ秒）。自動再生のインターバルとして使う
 const slideshowDuration = 1500;
-const slideshow = $('.main-content .slideshow');
 /**
  * 動画スライドの再生ヘルパー。
  * video._bgReady フラグで「initBgVideo をすでに呼んだか」を管理し、
@@ -23,8 +22,10 @@ function playSlideVideo(slide) {
     const fadeEl = slide.querySelector('.slide-video-fade'); // 動画末尾のフェードオーバーレイ
     initBgVideo(video, {
         fadeEl,
-        onSuccess: () => { if (img)
-            img.style.display = 'none'; },
+        onSuccess: () => {
+            if (img)
+                img.style.display = 'none';
+        },
         onFail: () => {
             video.style.display = 'none';
             if (fadeEl)
@@ -81,9 +82,7 @@ export function slideshowSwitch(sw, index, auto, direction) {
     pages.removeClass('is-active');
     pages.eq(index).addClass('is-active'); // ページネーションのアクティブドットを更新
     // direction が明示されない場合は、新旧スライドのDOM順序から左右を自動判定
-    const slideDir = direction !== undefined
-        ? direction
-        : (newSlide.index() > activeSlide.index() ? 'right' : 'left');
+    const slideDir = direction !== undefined ? direction : newSlide.index() > activeSlide.index() ? 'right' : 'left';
     // スライド方向を particleEffect.ts の風エフェクトに伝える
     window.dispatchEvent(new CustomEvent('windTrigger', { detail: { direction: slideDir } }));
     // 右へ進む場合と左へ進む場合で、新旧スライドの初期位置・移動先を逆にする
@@ -123,7 +122,11 @@ export function slideshowSwitch(sw, index, auto, direction) {
     newSlide.css({ display: 'block', width: 0, right: newSlideRight, left: newSlideLeft, zIndex: 2 });
     // 画像コンテナはスライド幅を固定して、スライドの展開に連動してスクロールするように見せる
     newSlideImage.css({ width: sw.width(), right: newSlideImageRight, left: newSlideImageLeft });
-    newSlideContent.css({ width: sw.width(), left: newSlideContentLeft, right: newSlideContentRight });
+    newSlideContent.css({
+        width: sw.width(),
+        left: newSlideContentLeft,
+        right: newSlideContentRight,
+    });
     activeSlideImage.css({ left: 0 }); // 旧スライド画像の起点をリセット（アニメーション開始基点）
     // キャプション要素をすべて y:20 に初期位置セット（後でスタッガーで上に飛ばす）
     TweenMax.set(newSlideElements, { y: 20, force3D: true });
@@ -138,7 +141,11 @@ export function slideshowSwitch(sw, index, auto, direction) {
     // 新スライドを width:0 → sw.width() にアニメーション（ワイプイン）
     TweenMax.to(newSlide, 1, { width: sw.width(), ease: Power3.easeInOut });
     // 新スライドの画像をパララックスオフセットから正位置へ移動（視差効果）
-    TweenMax.to(newSlideImage, 1, { right: newSlideImageToRight, left: newSlideImageToLeft, ease: Power3.easeInOut });
+    TweenMax.to(newSlideImage, 1, {
+        right: newSlideImageToRight,
+        left: newSlideImageToLeft,
+        ease: Power3.easeInOut,
+    });
     // キャプション内の要素を0.1秒ずつずらして順番に浮き上がらせる（stagger）
     // delay:0.6 でワイプが終わりかけたタイミングから開始
     TweenMax.staggerFromTo(newSlideElements, 0.8, { alpha: 0, y: 60 }, { alpha: 1, y: 0, ease: Power3.easeOut, force3D: true, delay: 0.6 }, 0.1, () => {
@@ -207,7 +214,7 @@ function runIntroSequence(sw, onComplete) {
     // すべての .image 要素の読み込みを待ってからアニメーション開始
     // 画像が揃う前に動くと一部が空白になるため
     const images = categorySlides.find('.image').toArray();
-    const loadPromises = images.map(img => new Promise(resolve => {
+    const loadPromises = images.map((img) => new Promise((resolve) => {
         if (img.complete) {
             resolve();
             return;
@@ -263,16 +270,25 @@ function runIntroSequence(sw, onComplete) {
             TweenMax.to(slidesContainer, 0.6, { x: 0, ease: Power2.easeOut, force3D: true });
             // テキストをフェードイン → 0.8秒後にフェードアウト → cleanup()
             TweenMax.to(welcomeText, 0.5, {
-                opacity: 1, delay: 0.1,
+                opacity: 1,
+                delay: 0.1,
                 onComplete: () => {
                     TweenMax.to(welcome, 0.5, {
-                        opacity: 0, ease: Power1.easeIn, delay: 0.8,
-                        onComplete: () => { welcome.remove(); cleanup(); },
+                        opacity: 0,
+                        ease: Power1.easeIn,
+                        delay: 0.8,
+                        onComplete: () => {
+                            welcome.remove();
+                            cleanup();
+                        },
                     });
                 },
             });
         }
-        skipBtn.on('click', () => { skipBtn.hide(); showWelcome(); }); // スキップ時は即ウェルカム画面へ
+        skipBtn.on('click', () => {
+            skipBtn.hide();
+            showWelcome();
+        }); // スキップ時は即ウェルカム画面へ
         // イントロ中は操作 UI を隠す
         sw.find('.arrows').css('visibility', 'hidden');
         sw.find('.pagination').css('visibility', 'hidden');
@@ -287,15 +303,21 @@ function runIntroSequence(sw, onComplete) {
         });
         slidesContainer.css('width', categoryTotal * w);
         // 右向きの風を「カテゴリ数 × 400ms」の持続時間で起動
-        window.dispatchEvent(new CustomEvent('windTrigger', { detail: { direction: 'right', duration: categoryTotal * 400 } }));
+        window.dispatchEvent(new CustomEvent('windTrigger', {
+            detail: { direction: 'right', duration: categoryTotal * 400 },
+        }));
         // slidesContainer を「カテゴリ数 × 0.4秒」かけて左端まで流す（右スクロール演出）
         // 完了時に showWelcome() を呼ぶ
         TweenMax.to(slidesContainer, categoryTotal * 0.4, {
-            x: -(categoryTotal - 1) * w, ease: Power2.easeInOut, force3D: true, onComplete: showWelcome,
+            x: -(categoryTotal - 1) * w,
+            ease: Power2.easeInOut,
+            force3D: true,
+            onComplete: showWelcome,
         });
     });
 }
 $(document).ready(() => {
+    const slideshow = $('.slideshow');
     // 全スライドに読み込み完了クラスを付与（CSS側でのフェードイン等に使う）
     $('.slide').addClass('is-loaded');
     // イントロ中はスライドのテキストと矢印を隠しておく（runIntroSequence 内でも制御するが初期化）
@@ -334,7 +356,9 @@ $(document).ready(() => {
         const spinner = document.getElementById('loading');
         if (spinner)
             spinner.classList.remove('loaded'); // スピナー表示
-        setTimeout(() => { location.href = href; }, 50);
+        setTimeout(() => {
+            location.href = href;
+        }, 50);
     });
     // イントロシーケンスを起動し、完了後に自動再生を開始する
     function startIntro() {

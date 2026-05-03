@@ -4,7 +4,7 @@
  * 呼び出し側が返り値を保持し、必要なタイミングでclassList.add('modal-open')して表示する。
  * フォームなど何度も開閉するモーダルに使う。
  */
-export function buildFormModal({ id, icon = null, title, bodyHTML }) {
+export function buildFormModal({ id, icon = null, title, bodyHTML, }) {
     const iconHTML = icon != null ? `<div class="modal-icon">${icon}</div>` : '';
     document.body.insertAdjacentHTML('beforeend', `
     <div id="${id}" class="overlay">

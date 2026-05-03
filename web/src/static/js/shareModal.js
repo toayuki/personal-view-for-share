@@ -34,7 +34,14 @@ function initShareModal() {
                 const qrWrap = document.createElement('div');
                 qrWrap.style.cssText = 'position:relative; display:inline-block; line-height:0;';
                 container.appendChild(qrWrap);
-                new QRCode(qrWrap, { text: currentShareUrl, width: 160, height: 160, colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
+                new QRCode(qrWrap, {
+                    text: currentShareUrl,
+                    width: 160,
+                    height: 160,
+                    colorDark: '#000000',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.H,
+                });
                 // -- QR中央ラベル（不要な場合は以下の3行をコメントアウト） --
                 // const labelEl = document.createElement('div');
                 // labelEl.textContent = 'share with you';

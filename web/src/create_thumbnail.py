@@ -5,22 +5,24 @@
 import os
 import subprocess
 from pathlib import Path
+from typing import Any
+
+import pillow_heif  # type: ignore[import-untyped]
 from dotenv import load_dotenv
 from PIL import Image, ImageOps
-import pillow_heif
 from src.services import get_file_type
 
 load_dotenv()
 BASE_DIR = os.getenv("CONTENTS_SAVE_DIR", "")
 
 
-def create_thumbnail(input_file_path: Path, output_file_path: Path) -> str:
+def create_thumbnail(input_file_path: Path, output_file_path: Path) -> None:
     """サムネイルを作成する"""
     if get_file_type(input_file_path) == "video":
         # ffmpegのWebP直接出力は環境によってピクセルフォーマットの問題で失敗するため、
         # 一度JPEGで出力してからPILでWebPに変換する
         tmp_path = output_file_path.with_suffix(".jpg")
-        cmd = [
+        cmd: list[str | Path] = [
             "ffmpeg",
             "-i",
             input_file_path,
@@ -42,11 +44,11 @@ def create_thumbnail(input_file_path: Path, output_file_path: Path) -> str:
         raise ValueError("エラーが発生しました")
 
 
-def make_square_thumbnail_for_image(input_path: Path, output_path: Path, size=300):
+def make_square_thumbnail_for_image(input_path: Path, output_path: Path, size: int = 300):
     """画像ファイルからサムネを作成する"""
     # 画像を開く
     if input_path.suffix.lower() == ".heic":
-        heif_file = pillow_heif.read_heif(input_path)
+        heif_file: Any = pillow_heif.read_heif(input_path)  # type: ignore[reportUnknownMemberType] -- pillow_heif has no stubs
         img = Image.frombytes(heif_file.mode, heif_file.size, heif_file.data, "raw")
     else:
         img = Image.open(input_path)

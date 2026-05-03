@@ -33,9 +33,13 @@ function initCategoryModal() {
     // focus時に位置を保存し、blur時に元の位置へ復元する。
     // 100ms遅延はキーボード収納アニメーション完了前にscrollToを呼ぶと無効になるため。
     let savedScrollY = 0;
-    categoryModalEl.querySelectorAll('input').forEach(input => {
-        input.addEventListener('focus', () => { savedScrollY = window.scrollY; });
-        input.addEventListener('blur', () => { setTimeout(() => window.scrollTo(0, savedScrollY), 100); });
+    categoryModalEl.querySelectorAll('input').forEach((input) => {
+        input.addEventListener('focus', () => {
+            savedScrollY = window.scrollY;
+        });
+        input.addEventListener('blur', () => {
+            setTimeout(() => window.scrollTo(0, savedScrollY), 100);
+        });
     });
 }
 /** 画像ファイル選択時にプレビューを表示する */

@@ -7,7 +7,7 @@ CAFFEINATE_PID=$!
 cloudflared tunnel --config ~/.cloudflared/config.yml run my-tunnel &
 TUNNEL_PID=$!
 
-(cd api && source venv/bin/activate && uvicorn src.main:app --reload --host 192.168.0.7 --port 8000) &
+(cd api && source ../venv/bin/activate && uvicorn src.main:app --reload --host 192.168.0.7 --port 8000) &
 API_PID=$!
 
 (cd web && source ../venv/bin/activate && uvicorn src.main:app --reload --host 192.168.0.7 --port 3000) &

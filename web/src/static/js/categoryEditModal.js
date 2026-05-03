@@ -1,4 +1,4 @@
-import { buildFormModal, openNotificationModal, openConfirmModal } from './modal.js';
+import { buildFormModal, openConfirmModal, openNotificationModal } from './modal.js';
 let editModalEl = null;
 let currentCategoryId = null;
 function initEditModal() {
@@ -46,9 +46,13 @@ function initEditModal() {
     // focus時に位置を保存し、blur時に元の位置へ復元する。
     // 100ms遅延はキーボード収納アニメーション完了前にscrollToを呼ぶと無効になるため。
     let savedScrollY = 0;
-    editModalEl.querySelectorAll('input').forEach(input => {
-        input.addEventListener('focus', () => { savedScrollY = window.scrollY; });
-        input.addEventListener('blur', () => { setTimeout(() => window.scrollTo(0, savedScrollY), 100); });
+    editModalEl.querySelectorAll('input').forEach((input) => {
+        input.addEventListener('focus', () => {
+            savedScrollY = window.scrollY;
+        });
+        input.addEventListener('blur', () => {
+            setTimeout(() => window.scrollTo(0, savedScrollY), 100);
+        });
     });
 }
 function onImageSelected(e) {
@@ -77,12 +81,13 @@ function onVideoSelected(e) {
     preview.style.display = 'block';
     placeholder.style.display = 'none';
 }
-function openEditModal({ categoryId, name, description, imageFileName }) {
+function openEditModal({ categoryId, name, description, imageFileName, }) {
     if (!editModalEl)
         initEditModal();
     currentCategoryId = categoryId;
     editModalEl.querySelector('#edit-category-name').value = name !== null && name !== void 0 ? name : '';
-    editModalEl.querySelector('#edit-category-description').value = description !== null && description !== void 0 ? description : '';
+    editModalEl.querySelector('#edit-category-description').value =
+        description !== null && description !== void 0 ? description : '';
     const preview = editModalEl.querySelector('#edit-category-img-preview');
     const placeholder = editModalEl.querySelector('#edit-category-img-placeholder');
     if (imageFileName) {
@@ -148,7 +153,8 @@ async function saveEditModal() {
         return;
     }
     const data = await res.json();
-    const slide = (_d = document.querySelector(`.category-edit-btn[data-category-id="${currentCategoryId}"]`)) === null || _d === void 0 ? void 0 : _d.closest('.slide');
+    const slide = (_d = document
+        .querySelector(`.category-edit-btn[data-category-id="${currentCategoryId}"]`)) === null || _d === void 0 ? void 0 : _d.closest('.slide');
     if (slide) {
         slide.querySelector('.title').textContent = name;
         const descDom = slide.querySelector('.text');
@@ -170,15 +176,17 @@ async function saveEditModal() {
     openNotificationModal({ message: '更新しました。' });
 }
 function waitForSlideshow(el) {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
         if (!el.data('wait')) {
             resolve();
             return;
         }
-        const id = setInterval(() => { if (!el.data('wait')) {
-            clearInterval(id);
-            resolve();
-        } }, 50);
+        const id = setInterval(() => {
+            if (!el.data('wait')) {
+                clearInterval(id);
+                resolve();
+            }
+        }, 50);
     });
 }
 async function onDeleteClick() {
@@ -188,7 +196,8 @@ async function onDeleteClick() {
         message: 'このカテゴリを削除しますか？',
         onOk: async () => {
             var _a, _b, _c, _d, _e;
-            const slide = (_a = document.querySelector(`.category-edit-btn[data-category-id="${categoryId}"]`)) === null || _a === void 0 ? void 0 : _a.closest('.slide');
+            const slide = (_a = document
+                .querySelector(`.category-edit-btn[data-category-id="${categoryId}"]`)) === null || _a === void 0 ? void 0 : _a.closest('.slide');
             const slideIndex = slide
                 ? [...document.querySelectorAll('.slides .slide')].indexOf(slide)
                 : -1;

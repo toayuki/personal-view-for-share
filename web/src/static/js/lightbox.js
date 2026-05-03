@@ -76,16 +76,28 @@ function render() {
     prevBtn.style.visibility = currentIndex === 0 ? 'hidden' : 'visible';
     nextBtn.style.visibility = currentIndex === items.length - 1 ? 'hidden' : 'visible';
 }
-function prev() { if (currentIndex > 0)
-    open(currentIndex - 1); }
-function next() { if (currentIndex < items.length - 1)
-    open(currentIndex + 1); }
+function prev() {
+    if (currentIndex > 0)
+        open(currentIndex - 1);
+}
+function next() {
+    if (currentIndex < items.length - 1)
+        open(currentIndex + 1);
+}
 closeBtn.addEventListener('click', close);
 // オーバーレイ背景クリックで閉じる
-overlay.addEventListener('click', (e) => { if (e.target === overlay)
-    close(); });
-prevBtn.addEventListener('click', (e) => { e.stopPropagation(); prev(); });
-nextBtn.addEventListener('click', (e) => { e.stopPropagation(); next(); });
+overlay.addEventListener('click', (e) => {
+    if (e.target === overlay)
+        close();
+});
+prevBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    prev();
+});
+nextBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    next();
+});
 // キーボード操作
 document.addEventListener('keydown', (e) => {
     if (!overlay.classList.contains('lb-open'))
@@ -107,7 +119,7 @@ document.addEventListener('click', (e) => {
     e.preventDefault();
     const group = a.dataset.fancybox;
     const allLinks = Array.from(document.querySelectorAll(`a[data-fancybox="${group}"]`));
-    items = allLinks.map(el => { var _a; return ({ href: el.href, type: (_a = el.dataset.type) !== null && _a !== void 0 ? _a : 'image' }); });
+    items = allLinks.map((el) => { var _a; return ({ href: el.href, type: (_a = el.dataset.type) !== null && _a !== void 0 ? _a : 'image' }); });
     open(allLinks.indexOf(a));
 });
 //# sourceMappingURL=lightbox.js.map

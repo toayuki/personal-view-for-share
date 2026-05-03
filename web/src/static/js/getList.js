@@ -3,15 +3,17 @@ const categoryId = result === null || result === void 0 ? void 0 : result.datase
 const API_BASE = window.API_BASE;
 if (result && categoryId) {
     fetch(`${API_BASE}/${categoryId}/getList`)
-        .then(res => res.json())
+        .then((res) => res.json())
         .then((data) => {
-        data.items.forEach(item => result.appendChild(createGridItem(item)));
+        data.items.forEach((item) => result.appendChild(createGridItem(item)));
         // 全動画を一括チェックし、変換中のものだけオーバーレイを追加
-        const videoItems = [...result.querySelectorAll('.grid-item[data-stored-file-name]')];
+        const videoItems = [
+            ...result.querySelectorAll('.grid-item[data-stored-file-name]'),
+        ];
         if (videoItems.length > 0) {
-            fetchConversionStatuses(videoItems.map(el => el.dataset.storedFileName))
-                .then(statuses => {
-                videoItems.forEach(el => {
+            fetchConversionStatuses(videoItems.map((el) => el.dataset.storedFileName))
+                .then((statuses) => {
+                videoItems.forEach((el) => {
                     var _a;
                     const d = statuses[el.dataset.storedFileName];
                     if (d && d.status !== 'done' && d.status !== 'error') {
@@ -24,7 +26,7 @@ if (result && categoryId) {
                 .catch(() => { });
         }
     })
-        .catch(err => {
+        .catch((err) => {
         if (result)
             result.textContent = '取得失敗';
         console.error(err);
@@ -72,9 +74,10 @@ export function createGridItem(item) {
     a.appendChild(img);
     const typeIcon = document.createElement('span');
     typeIcon.className = 'file-type-icon';
-    typeIcon.innerHTML = item.file_type === 'video'
-        ? '<i class="fa-solid fa-film"></i> VIDEO'
-        : '<i class="fa-regular fa-image"></i> PHOTO';
+    typeIcon.innerHTML =
+        item.file_type === 'video'
+            ? '<i class="fa-solid fa-film"></i> VIDEO'
+            : '<i class="fa-regular fa-image"></i> PHOTO';
     a.appendChild(typeIcon);
     li.appendChild(a);
     li.appendChild(linkArea);
@@ -112,8 +115,8 @@ function _updateBar(item, progress, status) {
         label.dataset.status = status !== null && status !== void 0 ? status : 'converting';
 }
 function fetchConversionStatuses(names) {
-    const params = new URLSearchParams(names.map(n => ['names', n]));
-    return fetch(`/conversion-status?${params}`).then(r => r.json());
+    const params = new URLSearchParams(names.map((n) => ['names', n]));
+    return fetch(`/conversion-status?${params}`).then((r) => r.json());
 }
 let _pollingActive = false;
 export function startConversionPolling() {
@@ -122,15 +125,17 @@ export function startConversionPolling() {
     _pollingActive = true;
     const interval = setInterval(async () => {
         var _a;
-        const converting = [...((_a = result === null || result === void 0 ? void 0 : result.querySelectorAll('.grid-item.converting[data-stored-file-name]')) !== null && _a !== void 0 ? _a : [])];
+        const converting = [
+            ...((_a = result === null || result === void 0 ? void 0 : result.querySelectorAll('.grid-item.converting[data-stored-file-name]')) !== null && _a !== void 0 ? _a : []),
+        ];
         if (converting.length === 0) {
             clearInterval(interval);
             _pollingActive = false;
             return;
         }
         try {
-            const statuses = await fetchConversionStatuses(converting.map(el => el.dataset.storedFileName));
-            converting.forEach(item => {
+            const statuses = await fetchConversionStatuses(converting.map((el) => el.dataset.storedFileName));
+            converting.forEach((item) => {
                 var _a, _b;
                 const d = statuses[item.dataset.storedFileName];
                 if (!d)

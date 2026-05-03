@@ -1,0 +1,25 @@
+{
+  // Python
+  "python.defaultInterpreterPath": "${workspaceFolder}/venv/bin/python3",
+  "python.analysis.extraPaths": ["web", "api"],
+
+  // Ruff (formatter / linter for Python)
+  "ruff.enable": true,
+  "ruff.path": ["${workspaceFolder}/venv/bin/ruff"],
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "explicit"
+    }
+  },
+
+  // Pyright / Pylance
+  "python.analysis.typeCheckingMode": "strict",
+
+  // Editor
+  "editor.rulers": [100],
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true
+}

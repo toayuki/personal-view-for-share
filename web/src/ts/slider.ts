@@ -2,7 +2,6 @@ import { initBgVideo } from './videoBackground.js';
 
 // スライドが表示される最低時間（ミリ秒）。自動再生のインターバルとして使う
 const slideshowDuration = 1500;
-const slideshow = $('.main-content .slideshow');
 
 /**
  * 動画スライドの再生ヘルパー。
@@ -376,6 +375,8 @@ function runIntroSequence(sw: JQuery, onComplete: () => void): void {
 }
 
 $(document).ready(() => {
+  const slideshow = $('.slideshow');
+
   // 全スライドに読み込み完了クラスを付与（CSS側でのフェードイン等に使う）
   $('.slide').addClass('is-loaded');
 

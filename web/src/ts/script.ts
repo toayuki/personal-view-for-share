@@ -188,7 +188,7 @@ document.addEventListener('click', async (e) => {
         onOk: async () => {
           for (const item of targets) {
             try {
-              const res = await fetch(`/delete/${item.dataset.id}`);
+              const res = await fetch(`/delete/${item.dataset.id}`, { method: 'DELETE' });
               if (!res.ok) throw new Error();
               item.remove();
             } catch {
@@ -203,7 +203,7 @@ document.addEventListener('click', async (e) => {
         message: '本当に削除しますか？',
         onOk: async () => {
           try {
-            const res = await fetch(`/delete/${targetId}`);
+            const res = await fetch(`/delete/${targetId}`, { method: 'DELETE' });
             if (!res.ok) throw new Error();
             deleteLink.closest('.grid-item')?.remove();
           } catch {
@@ -230,7 +230,7 @@ document.addEventListener('click', async (e) => {
         onOk: async () => {
           for (const item of targets) {
             try {
-              const res = await fetch(`/forceDelete/${item.dataset.id}`);
+              const res = await fetch(`/forceDelete/${item.dataset.id}`, { method: 'DELETE' });
               if (!res.ok) throw new Error();
               item.remove();
             } catch {
@@ -245,7 +245,7 @@ document.addEventListener('click', async (e) => {
         message: 'ファイルを含む全データを削除します。元に戻せません。',
         onOk: async () => {
           try {
-            const res = await fetch(`/forceDelete/${targetId}`);
+            const res = await fetch(`/forceDelete/${targetId}`, { method: 'DELETE' });
             if (!res.ok) throw new Error();
             forceDeleteLink.closest('.grid-item')?.remove();
           } catch {

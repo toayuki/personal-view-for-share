@@ -1,7 +1,7 @@
 var _a, _b;
-import { openConfirmModal } from './modal.js';
 import { onOpenEdit } from './contentsEditModal.js';
-import { createGridItem, startConversionPolling, addConvertingOverlay } from './getList.js';
+import { addConvertingOverlay, createGridItem, startConversionPolling } from './getList.js';
+import { openConfirmModal } from './modal.js';
 // グローバルナビ関連
 const bnrBtn = $('#g_navi');
 const $header = $('header');
@@ -9,15 +9,15 @@ const $footer = $('footer');
 let scrollpos = 0; // メニューを開く直前のスクロール位置（閉じたときに復元）
 let ttt = false; // メニュー開閉状態フラグ
 $('.bg_bl').hide();
-$(function () {
-    $('.menu_btn').on('click', function () {
+$(() => {
+    $('.menu_btn').on('click', () => {
         const $items = $('#g_navi ul li');
         const total = $items.length;
         if (!ttt) {
             bnrBtn.addClass('nav-open');
             // メニューを開く: 各 li にアニメーション用 CSS 変数をセット（上から順にずらして表示）
             $items.each(function (index) {
-                this.style.setProperty('--item-delay', (index * 0.04) + 's');
+                this.style.setProperty('--item-delay', index * 0.04 + 's');
                 this.style.setProperty('--slide-from', -(40 + index * 25) + 'px');
             });
             const openDuration = ((total - 1) * 0.04 + 0.25) * 1000;
@@ -31,10 +31,14 @@ $(function () {
         else {
             // メニューを閉じる: 逆順の遅延で li を上に戻す
             $items.each(function (index) {
-                this.style.setProperty('--item-delay', ((total - 1 - index) * 0.04) + 's');
+                this.style.setProperty('--item-delay', (total - 1 - index) * 0.04 + 's');
             });
             const closeDuration = ((total - 1) * 0.04 + 0.25) * 1000;
-            bnrBtn.removeClass('nav-open').addClass('nav-close').stop().fadeOut(closeDuration, function () {
+            bnrBtn
+                .removeClass('nav-open')
+                .addClass('nav-close')
+                .stop()
+                .fadeOut(closeDuration, () => {
                 bnrBtn.removeClass('nav-close');
             });
             $('.bg_bl').stop().fadeOut(closeDuration);
@@ -55,12 +59,12 @@ else {
     // iphoneでセーフエリア外の境界がわからないようにするため、スクロール位置に関わらず常にfixedを適用
     $header.addClass('fixed');
 }
-window.onload = function () {
+window.onload = () => {
     const spinner = document.getElementById('loading');
     spinner.classList.add('loaded');
     $('.grid').toggleClass('animated');
     $('.grid-item').each(function (index) {
-        $(this).css({ 'transition-delay': (0.01 * index) + 's' });
+        $(this).css({ 'transition-delay': 0.01 * index + 's' });
     });
 };
 const spinner = document.getElementById('loading');
@@ -109,7 +113,10 @@ const spinner = document.getElementById('loading');
                 catch (_a) { }
                 resolve();
             };
-            xhr.onerror = () => { console.error(`アップロード失敗: ${file.name}`); reject(); };
+            xhr.onerror = () => {
+                console.error(`アップロード失敗: ${file.name}`);
+                reject();
+            };
             xhr.open('POST', `/upload/${categoryId}`);
             xhr.send(formData);
         }).catch(() => { });
@@ -135,7 +142,9 @@ if (optionsBtn) {
         const isEditMode = document.body.classList.toggle('edit-mode');
         optionsBtn.textContent = isEditMode ? 'done' : 'options';
         if (!isEditMode) {
-            document.querySelectorAll('.grid-item.selected').forEach(el => el.classList.remove('selected'));
+            document
+                .querySelectorAll('.grid-item.selected')
+                .forEach((el) => el.classList.remove('selected'));
         }
     });
 }
@@ -144,8 +153,8 @@ const selectAllBtn = document.getElementById('selectAllBtn');
 if (selectAllBtn) {
     selectAllBtn.addEventListener('click', () => {
         const allItems = document.querySelectorAll('.grid-item');
-        const allSelected = [...allItems].every(el => el.classList.contains('selected'));
-        allItems.forEach(el => el.classList.toggle('selected', !allSelected));
+        const allSelected = [...allItems].every((el) => el.classList.contains('selected'));
+        allItems.forEach((el) => el.classList.toggle('selected', !allSelected));
     });
 }
 // グリッドアイテムの操作（削除・強制削除・編集・選択）を一括でイベント委譲
@@ -166,7 +175,7 @@ document.addEventListener('click', async (e) => {
                 onOk: async () => {
                     for (const item of targets) {
                         try {
-                            const res = await fetch(`/delete/${item.dataset.id}`);
+                            const res = await fetch(`/delete/${item.dataset.id}`, { method: 'DELETE' });
                             if (!res.ok)
                                 throw new Error();
                             item.remove();
@@ -185,7 +194,7 @@ document.addEventListener('click', async (e) => {
                 onOk: async () => {
                     var _a;
                     try {
-                        const res = await fetch(`/delete/${targetId}`);
+                        const res = await fetch(`/delete/${targetId}`, { method: 'DELETE' });
                         if (!res.ok)
                             throw new Error();
                         (_a = deleteLink.closest('.grid-item')) === null || _a === void 0 ? void 0 : _a.remove();
@@ -213,7 +222,7 @@ document.addEventListener('click', async (e) => {
                 onOk: async () => {
                     for (const item of targets) {
                         try {
-                            const res = await fetch(`/forceDelete/${item.dataset.id}`);
+                            const res = await fetch(`/forceDelete/${item.dataset.id}`, { method: 'DELETE' });
                             if (!res.ok)
                                 throw new Error();
                             item.remove();
@@ -232,7 +241,7 @@ document.addEventListener('click', async (e) => {
                 onOk: async () => {
                     var _a;
                     try {
-                        const res = await fetch(`/forceDelete/${targetId}`);
+                        const res = await fetch(`/forceDelete/${targetId}`, { method: 'DELETE' });
                         if (!res.ok)
                             throw new Error();
                         (_a = forceDeleteLink.closest('.grid-item')) === null || _a === void 0 ? void 0 : _a.remove();
@@ -279,8 +288,10 @@ document.addEventListener('click', async (e) => {
         }
     }
 });
-(_b = document.getElementById('logoutBtn')) === null || _b === void 0 ? void 0 : _b.addEventListener('click', e => {
+(_b = document.getElementById('logoutBtn')) === null || _b === void 0 ? void 0 : _b.addEventListener('click', (e) => {
     e.preventDefault();
-    fetch('/logout', { method: 'POST' }).then(() => { location.href = '/login'; });
+    fetch('/logout', { method: 'POST' }).then(() => {
+        location.href = '/login';
+    });
 });
 //# sourceMappingURL=script.js.map

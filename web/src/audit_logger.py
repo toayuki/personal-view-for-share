@@ -11,18 +11,16 @@ import os
 import re
 from datetime import datetime
 from pathlib import Path
+from typing import Any, cast
 
 import requests as http_requests
-from dotenv import load_dotenv  # type: ignore
+from dotenv import load_dotenv
 from fastapi import Request
 
 load_dotenv()
 
-LOG_DIR = (
-    Path(os.getenv("LOG_DIR"))
-    if os.getenv("LOG_DIR")
-    else Path(__file__).parent.parent.parent / "logs"
-)
+_log_dir_env = os.getenv("LOG_DIR")
+LOG_DIR = Path(_log_dir_env) if _log_dir_env else Path(__file__).parent.parent.parent / "logs"
 _LOGIN_ACCESS_LOG = LOG_DIR / "login_access.log"
 
 _CTRL_CHARS = str.maketrans({c: " " for c in "\r\n\t\x00\x1b"})
@@ -30,22 +28,28 @@ _CTRL_CHARS = str.maketrans({c: " " for c in "\r\n\t\x00\x1b"})
 # (HTTPメソッド, パスのパターン, アクション名) のリスト
 # パターン内の名前付きグループがそのまま details に入る
 AUDIT_ROUTES = [
-    ("POST",   re.compile(r"^/login$"),                                                                       "login"),
-    ("POST",   re.compile(r"^/logout$"),                                                                      "logout"),
-    ("POST",   re.compile(r"^/signup$"),                                                                      "signup_request"),
-    ("POST",   re.compile(r"^/signup/complete$"),                                                             "signup_complete"),
-    ("GET",    re.compile(r"^/$"),                                                                            "index_view"),
-    ("GET",    re.compile(r"^/howToUse\.html$"),                                                              "howto_view"),
-    ("POST",   re.compile(r"^/categories$"),                                                                  "category_create"),
-    ("DELETE", re.compile(r"^/categories/(?P<category_id>[^/]+)$"),                                          "category_delete"),
-    ("GET",    re.compile(r"^/(?P<category_id>[^/]+)\.html$"),                                               "category_view"),
-    ("POST",   re.compile(r"^/upload/(?P<category_id>[^/]+)$"),                                              "upload"),
-    ("POST",   re.compile(r"^/start-conversion$"),                                                            "conversion_start"),
-    ("GET",    re.compile(r"^/delete/(?P<target_id>[^/]+)$"),                                                "delete"),
-    ("GET",    re.compile(r"^/forceDelete/(?P<target_id>[^/]+)$"),                                           "force_delete"),
-    ("GET",    re.compile(r"^/download/(?P<content_id>[^/]+)$"),                                             "download"),
+    ("POST", re.compile(r"^/login$"), "login"),
+    ("POST", re.compile(r"^/logout$"), "logout"),
+    ("POST", re.compile(r"^/signup$"), "signup_request"),
+    ("POST", re.compile(r"^/signup/complete$"), "signup_complete"),
+    ("GET", re.compile(r"^/$"), "index_view"),
+    ("GET", re.compile(r"^/howToUse\.html$"), "howto_view"),
+    ("POST", re.compile(r"^/categories$"), "category_create"),
+    ("DELETE", re.compile(r"^/categories/(?P<category_id>[^/]+)$"), "category_delete"),
+    ("GET", re.compile(r"^/(?P<category_id>[^/]+)\.html$"), "category_view"),
+    ("POST", re.compile(r"^/upload/(?P<category_id>[^/]+)$"), "upload"),
+    ("POST", re.compile(r"^/start-conversion$"), "conversion_start"),
+    ("GET", re.compile(r"^/delete/(?P<target_id>[^/]+)$"), "delete"),
+    ("GET", re.compile(r"^/forceDelete/(?P<target_id>[^/]+)$"), "force_delete"),
+    ("GET", re.compile(r"^/download/(?P<content_id>[^/]+)$"), "download"),
     # .m3u8 のみ記録（.ts セグメントは除外）
-    ("GET",    re.compile(r"^/personal-web/contents/(?P<category_id>[^/]+)/video/(?P<file_path>.+\.m3u8)$"), "video_play"),
+    (
+        "GET",
+        re.compile(
+            r"^/personal-web/contents/(?P<category_id>[^/]+)/video/(?P<file_path>.+\.m3u8)$"
+        ),
+        "video_play",
+    ),
 ]
 
 
@@ -62,7 +66,8 @@ def get_client_ip(request: Request) -> str:
     real_ip = request.headers.get("x-real-ip")
     if real_ip:
         return real_ip.strip()
-    return request.client.host if request.client else "-"
+    client = request.client
+    return cast(str, client.host) if client else "-"  # pyright: ignore[reportUnknownMemberType]
 
 
 def log_login_access(
@@ -82,7 +87,7 @@ def log_login_access(
     """
     try:
         LOG_DIR.mkdir(exist_ok=True)
-        entry: dict = {
+        entry: dict[str, object] = {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "event": event,
             "ip": ip,
@@ -104,7 +109,7 @@ def log_action(
     user_id: str | None,
     action: str,
     api_url: str,
-    details: dict | None = None,
+    details: dict[str, Any] | None = None,
     ip: str | None = None,
 ) -> None:
     """操作ログをDBとテキストファイルに記録する（失敗しても握りつぶす）"""
@@ -119,8 +124,10 @@ def log_action(
     try:
         LOG_DIR.mkdir(exist_ok=True)
         log_file = LOG_DIR / f"{user_id or 'anonymous'}.log"
-        safe_details = {k: sanitize(v) if isinstance(v, str) else v for k, v in (details or {}).items()}
-        entry = {
+        safe_details: dict[str, Any] = {
+            k: sanitize(v) if isinstance(v, str) else v for k, v in (details or {}).items()
+        }
+        entry: dict[str, Any] = {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "action": action,
             "ip": ip or "-",
@@ -133,13 +140,13 @@ def log_action(
         pass
 
 
-def make_audit_middleware(decode_token, api_url: str):
+def make_audit_middleware(decode_token: Any, api_url: str) -> Any:
     """audit_middleware のファクトリ関数。decode_token と api_url をクロージャで保持する。
 
     decode_token: (token: str) -> dict  JWT トークン文字列を受け取り payload dict を返す関数
     """
 
-    async def audit_middleware(request: Request, call_next):
+    async def audit_middleware(request: Request, call_next: Any) -> Any:
         """リクエストのメソッド・パスからユーザー操作を自動記録するミドルウェア"""
         method = request.method
         path = request.url.path
@@ -170,9 +177,13 @@ def make_audit_middleware(decode_token, api_url: str):
             if action == "login":
                 if response.status_code == 302:
                     # レスポンスの Set-Cookie から新しい JWT を取得してデコード
-                    set_cookie = response.headers.get("set-cookie", "")
+                    set_cookie: str = response.headers.get("set-cookie", "")
                     new_token = next(
-                        (p.strip()[len("session="):] for p in set_cookie.split(";") if p.strip().startswith("session=")),
+                        (
+                            p.strip()[len("session="):]
+                            for p in set_cookie.split(";")
+                            if p.strip().startswith("session=")
+                        ),
                         None,
                     )
                     user_id = decode_token(new_token).get("user_id") if new_token else None

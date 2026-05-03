@@ -5,11 +5,12 @@ import secrets
 import sqlite3
 import string
 from datetime import datetime, timedelta
+from typing import Any
 
 from dotenv import load_dotenv
 from fastapi import Body, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 _ID_ALPHABET = string.ascii_letters + string.digits
 
@@ -17,33 +18,22 @@ _ID_ALPHABET = string.ascii_letters + string.digits
 def _generate_id(length: int = 20) -> str:
     return "".join(secrets.choice(_ID_ALPHABET) for _ in range(length))
 
+
 load_dotenv()
 
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        os.getenv("STATIC_URL"),
-        os.getenv("GLOBAL_URL"),
-    ],
+    allow_origins=[u for u in [os.getenv("STATIC_URL"), os.getenv("GLOBAL_URL")] if u],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-
-@app.get("/message")
-def get_message():
-    return {"message": "APIから来た文字列です"}
-
 
 @app.get("/{category_id}/getList")
-def get_list(category_id: str):
+def get_list(category_id: str) -> dict[str, Any]:
     conn = sqlite3.connect("main.db")
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
@@ -63,7 +53,7 @@ def get_list(category_id: str):
 
 
 @app.get("/getContent/{target_id}")
-def get_item(target_id: str):
+def get_item(target_id: str) -> dict[str, Any]:
     conn = sqlite3.connect("main.db")
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
@@ -83,7 +73,7 @@ def get_item(target_id: str):
 
 
 @app.post("/upload")
-def upload(data: dict = Body(...)):
+def upload(data: dict[str, Any] = Body(...)) -> dict[str, str]:
     print("受信", data, data["thumbnail_file_name"])
     conn = sqlite3.connect("main.db")
     conn.row_factory = sqlite3.Row
@@ -124,22 +114,23 @@ def upload(data: dict = Body(...)):
     return {"id": content_id}
 
 
-@app.post("/update/{target_id}")
-def update(target_id: str, data: dict = Body(...)):
+@app.post("/update/{target_id}", status_code=204)
+def update(target_id: str, data: dict[str, Any] = Body(...)) -> Response:
     """タイトル更新"""
     conn = sqlite3.connect("main.db")
     cur = conn.cursor()
     cur.execute(
-        "UPDATE contents SET title=?, update_at=CURRENT_TIMESTAMP WHERE id=? AND deleted_at IS NULL",
+        "UPDATE contents SET title=?, update_at=CURRENT_TIMESTAMP"
+        " WHERE id=? AND deleted_at IS NULL",
         (data["title"], target_id),
     )
     conn.commit()
     conn.close()
-    return {"ok": True}
+    return Response(status_code=204)
 
 
-@app.post("/delete/{target_id}")
-def delete(target_id: str):
+@app.delete("/delete/{target_id}", status_code=204)
+def delete(target_id: str) -> Response:
     """削除機能"""
     print("削除受信", target_id)
     conn = sqlite3.connect("main.db")
@@ -152,14 +143,15 @@ def delete(target_id: str):
         WHERE id = ?
         AND deleted_at IS NULL
         """,
-        (target_id,)
+        (target_id,),
     )
     conn.commit()
     conn.close()
+    return Response(status_code=204)
 
 
 @app.post("/categories")
-def create_category(data: dict = Body(...)):
+def create_category(data: dict[str, Any] = Body(...)) -> dict[str, str] | JSONResponse:
     """カテゴリ登録"""
     name = data.get("name", "").strip()
     if not name:
@@ -171,16 +163,20 @@ def create_category(data: dict = Body(...)):
     category_id = _generate_id()
     try:
         cur.execute(
-            "INSERT INTO categories (id, name, description, image_file_name, created_by) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO categories"
+            " (id, name, description, image_file_name, created_by) VALUES (?, ?, ?, ?, ?)",
             (category_id, name, description, image_file_name, data.get("user_id")),
         )
         # 作成者の viewable_category_ids に新カテゴリを追加
         user_id = data.get("user_id")
         if user_id:
-            cur.execute("SELECT viewable_category_ids FROM users WHERE id=? AND deleted_at IS NULL", (user_id,))
+            cur.execute(
+                "SELECT viewable_category_ids FROM users WHERE id=? AND deleted_at IS NULL",
+                (user_id,),
+            )
             row = cur.fetchone()
             if row:
-                ids = json.loads(row[0]) if row[0] else []
+                ids: list[Any] = json.loads(row[0]) if row[0] else []
                 ids.append(category_id)
                 cur.execute(
                     "UPDATE users SET viewable_category_ids=? WHERE id=?",
@@ -191,16 +187,18 @@ def create_category(data: dict = Body(...)):
         conn.close()
         return JSONResponse(status_code=500, content={"error": "failed to create category"})
     conn.close()
-    return {"ok": True, "id": category_id}
+    return {"id": category_id}
 
 
-@app.patch("/categories/{category_id}")
-def update_category(category_id: str, data: dict = Body(...)):
+@app.patch("/categories/{category_id}", status_code=204)
+def update_category(
+    category_id: str, data: dict[str, Any] = Body(...)
+) -> Response:
     """カテゴリを更新する"""
     conn = sqlite3.connect("main.db")
     cur = conn.cursor()
-    updates = []
-    values = []
+    updates: list[str] = []
+    values: list[Any] = []
     if "name" in data:
         updates.append("name=?")
         values.append(data["name"])
@@ -215,16 +213,17 @@ def update_category(category_id: str, data: dict = Body(...)):
         values.append(data["video_file_name"])
     if not updates:
         conn.close()
-        return {"ok": True}
+        return Response(status_code=204)
     updates.append("updated_at=CURRENT_TIMESTAMP")
     values.append(category_id)
     cur.execute(f"UPDATE categories SET {', '.join(updates)} WHERE id=?", values)
     conn.commit()
     conn.close()
-    return {"ok": True}
+    return Response(status_code=204)
 
-@app.delete("/categories/{category_id}")
-def delete_category(category_id: str):
+
+@app.delete("/categories/{category_id}", status_code=204)
+def delete_category(category_id: str) -> Response:
     """カテゴリを論理削除する"""
     conn = sqlite3.connect("main.db")
     cur = conn.cursor()
@@ -234,17 +233,18 @@ def delete_category(category_id: str):
     )
     conn.commit()
     conn.close()
-    return {"ok": True}
+    return Response(status_code=204)
 
 
 @app.get("/categories/{category_id}")
-def get_category(category_id: str):
+def get_category(category_id: str) -> dict[str, Any]:
     """カテゴリを1件返す"""
     conn = sqlite3.connect("main.db")
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
     cur.execute(
-        "SELECT id, name, description, image_file_name, video_file_name, created_by FROM categories WHERE id=? AND deleted_at IS NULL",
+        "SELECT id, name, description, image_file_name, video_file_name, created_by"
+        " FROM categories WHERE id=? AND deleted_at IS NULL",
         (category_id,),
     )
     row = cur.fetchone()
@@ -253,19 +253,22 @@ def get_category(category_id: str):
 
 
 @app.get("/categories")
-def list_categories():
+def list_categories() -> dict[str, Any]:
     """全カテゴリ一覧を返す"""
     conn = sqlite3.connect("main.db")
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
-    cur.execute("SELECT id, name, description, image_file_name, video_file_name, created_by FROM categories WHERE deleted_at IS NULL ORDER BY created_at")
+    cur.execute(
+        "SELECT id, name, description, image_file_name, video_file_name, created_by"
+        " FROM categories WHERE deleted_at IS NULL ORDER BY created_at"
+    )
     rows = cur.fetchall()
     conn.close()
     return {"categories": [dict(row) for row in rows]}
 
 
 @app.post("/login/verify")
-def login_verify(data: dict = Body(...)):
+def login_verify(data: dict[str, Any] = Body(...)) -> dict[str, str] | JSONResponse:
     """ユーザー名・パスワードを検証する"""
     username = data.get("username", "").strip()
     password = data.get("password", "")
@@ -283,12 +286,16 @@ def login_verify(data: dict = Body(...)):
     row = cur.fetchone()
     conn.close()
     if row:
-        return {"ok": True, "user_id": row["id"], "role": row["role"], "viewable_category_ids": row["viewable_category_ids"]}
+        return {
+            "user_id": row["id"],
+            "role": row["role"],
+            "viewable_category_ids": row["viewable_category_ids"],
+        }
     return JSONResponse(status_code=401, content={"error": "invalid credentials"})
 
 
-@app.post("/audit/log")
-def audit_log(data: dict = Body(...)):
+@app.post("/audit/log", status_code=204)
+def audit_log(data: dict[str, Any] = Body(...)) -> Response:
     """操作ログを記録する"""
     conn = sqlite3.connect("main.db")
     cur = conn.cursor()
@@ -304,11 +311,11 @@ def audit_log(data: dict = Body(...)):
     )
     conn.commit()
     conn.close()
-    return {"ok": True}
+    return Response(status_code=204)
 
 
 @app.post("/register")
-def create_user(data: dict = Body(...)):
+def create_user(data: dict[str, Any] = Body(...)) -> dict[str, str] | JSONResponse:
     """ユーザー登録"""
     username = data.get("username", "").strip()
     password = data.get("password", "")
@@ -329,11 +336,13 @@ def create_user(data: dict = Body(...)):
         conn.close()
         return JSONResponse(status_code=409, content={"error": "username or email already exists"})
     conn.close()
-    return {"ok": True, "user_id": user_id}
+    return {"user_id": user_id}
 
 
 @app.post("/password-reset/request")
-def password_reset_request(data: dict = Body(...)):
+def password_reset_request(
+    data: dict[str, Any] = Body(...)
+) -> dict[str, str] | JSONResponse:
     """メールアドレスからパスワードリセットトークンを発行する"""
     email = data.get("email", "").strip()
     if not email:
@@ -355,11 +364,13 @@ def password_reset_request(data: dict = Body(...)):
     )
     conn.commit()
     conn.close()
-    return {"ok": True, "token": token}
+    return {"token": token}
 
 
-@app.post("/password-reset/complete")
-def password_reset_complete(data: dict = Body(...)):
+@app.post("/password-reset/complete", status_code=204)
+def password_reset_complete(
+    data: dict[str, Any] = Body(...)
+) -> Response | JSONResponse:
     """トークンを検証し、パスワードを更新する"""
     token = data.get("token", "").strip()
     password = data.get("password", "")
@@ -369,7 +380,8 @@ def password_reset_complete(data: dict = Body(...)):
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
     cur.execute(
-        "SELECT id, password_reset_expires_at FROM users WHERE password_reset_token=? AND deleted_at IS NULL",
+        "SELECT id, password_reset_expires_at FROM users"
+        " WHERE password_reset_token=? AND deleted_at IS NULL",
         (token,),
     )
     row = cur.fetchone()
@@ -382,45 +394,54 @@ def password_reset_complete(data: dict = Body(...)):
         return JSONResponse(status_code=400, content={"error": "token expired"})
     password_hash = hashlib.sha256(password.encode()).hexdigest()
     cur.execute(
-        "UPDATE users SET password_hash=?, password_reset_token=NULL, password_reset_expires_at=NULL WHERE id=?",
+        "UPDATE users SET password_hash=?, password_reset_token=NULL,"
+        " password_reset_expires_at=NULL WHERE id=?",
         (password_hash, row["id"]),
     )
     conn.commit()
     conn.close()
-    return {"ok": True}
+    return Response(status_code=204)
 
 
 @app.get("/users/{user_id}/viewable-categories")
-def get_viewable_categories(user_id: str):
+def get_viewable_categories(user_id: str) -> dict[str, Any] | JSONResponse:
     """ユーザーの閲覧可能カテゴリID一覧を返す"""
     conn = sqlite3.connect("main.db")
     cur = conn.cursor()
-    cur.execute("SELECT viewable_category_ids FROM users WHERE id=? AND deleted_at IS NULL", (user_id,))
+    cur.execute(
+        "SELECT viewable_category_ids FROM users WHERE id=? AND deleted_at IS NULL", (user_id,)
+    )
     row = cur.fetchone()
     conn.close()
     if not row:
         return JSONResponse(status_code=404, content={"error": "user not found"})
-    ids = json.loads(row[0]) if row[0] else []
+    ids: list[Any] = json.loads(row[0]) if row[0] else []
     return {"category_ids": ids}
 
 
-@app.post("/users/{user_id}/viewable-categories")
-def add_viewable_category(user_id: str, data: dict = Body(...)):
+@app.post("/users/{user_id}/viewable-categories", status_code=204)
+def add_viewable_category(
+    user_id: str, data: dict[str, Any] = Body(...)
+) -> Response | JSONResponse:
     """ユーザーの閲覧可能カテゴリにIDを追加する"""
     category_id = data.get("category_id")
     if not category_id:
         return JSONResponse(status_code=400, content={"error": "category_id required"})
     conn = sqlite3.connect("main.db")
     cur = conn.cursor()
-    cur.execute("SELECT viewable_category_ids FROM users WHERE id=? AND deleted_at IS NULL", (user_id,))
+    cur.execute(
+        "SELECT viewable_category_ids FROM users WHERE id=? AND deleted_at IS NULL", (user_id,)
+    )
     row = cur.fetchone()
     if not row:
         conn.close()
         return JSONResponse(status_code=404, content={"error": "user not found"})
-    ids = json.loads(row[0]) if row[0] else []
+    ids: list[Any] = json.loads(row[0]) if row[0] else []
     if category_id not in ids:
         ids.append(category_id)
-        cur.execute("UPDATE users SET viewable_category_ids=? WHERE id=?", (json.dumps(ids), user_id))
+        cur.execute(
+            "UPDATE users SET viewable_category_ids=? WHERE id=?", (json.dumps(ids), user_id)
+        )
         conn.commit()
     conn.close()
-    return {"ok": True}
+    return Response(status_code=204)
